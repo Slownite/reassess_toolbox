@@ -1,5 +1,6 @@
 import subprocess
 import argparse
+from pathlib import Path
 
 def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None):
 
@@ -26,6 +27,16 @@ def preprocessing_script(input_path, output_path, resolution=None, format=None, 
     
     subprocess.run(cmd, check=True)
 
+def process_directory(input_dir, output_dir, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None):
+    input_dir_path = Path(input_dir)
+    output_dir_path = Path(output_dir)
+    output_dir_path.mkdir(parents=True, exist_ok=True)
+    
+    for input_file in input_dir_path.glob('*'):
+        output_file = output_dir_path / input_file.name
+        preprocessing_script(input_file, output_file, resolution=resolution, format=format, frame_rate=frame_rate, sampling_rate=sampling_rate, compression=compression)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Preprocessing pipeline for media files using ffmpeg.")
     
@@ -38,10 +49,14 @@ def main():
     parser.add_argument('-c', '--compression', type=str, help="Compression type [string]")
     
     args = parser.parse_args()
-    
-    preprocessing_script(args.input_path, args.output_path, resolution=args.resolution, format=args.format,
-                         frame_rate=args.frame_rate, sampling_rate=args.sampling_rate, compression=args.compression)
 
+    # Vérifier si input_path est un dossier
+    if Path(args.input_path).is_dir():
+        process_directory(args.input_path, args.output_path, resolution=args.resolution, format=args.format,
+                          frame_rate=args.frame_rate, sampling_rate=args.sampling_rate, compression=args.compression)
+    else:
+        preprocessing_script(args.input_path, args.output_path, resolution=args.resolution, format=args.format,
+                             frame_rate=args.frame_rate, sampling_rate=args.sampling_rate, compression=args.compression)
 
 if __name__ == '__main__':
     main()
