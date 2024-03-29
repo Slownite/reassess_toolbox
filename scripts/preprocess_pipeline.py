@@ -2,7 +2,7 @@ import subprocess
 import argparse
 from pathlib import Path
 
-def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None):
+def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None, audio_filter=None):
 
     cmd = ['ffmpeg', '-i', input_path]
 
@@ -20,6 +20,8 @@ def preprocessing_script(input_path, output_path, resolution=None, format=None, 
         cmd += ['-r', str(frame_rate)]
     if sampling_rate:
         cmd += ['-ar', str(sampling_rate)]
+    if audio_filter:
+        cmd += ['-af', audio_filter]  # Specifies the audio filter to use
     if compression:
         cmd += ['-acodec', compression]  # L'option spécifique dépendra du type de compression désiré
 
@@ -47,7 +49,8 @@ def main():
     parser.add_argument('-fr', '--frame_rate', type=int, help="New frame rate [uint]")
     parser.add_argument('-sr', '--sampling_rate', type=int, help="New sampling rate [uint]")
     parser.add_argument('-c', '--compression', type=str, help="Compression type [string]")
-    
+    parser.add_argument('-af', '--audio_filter', type=str, help="Audio filter to apply [string]")
+
     args = parser.parse_args()
 
     # Vérifier si input_path est un dossier
