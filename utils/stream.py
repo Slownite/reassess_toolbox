@@ -111,7 +111,6 @@ def add_video_capture(paths: tuple[str, ...], videos: list[Any], cumul_length: l
         cumul_length.append(new_cumul_length)
     return videos, cumul_length
 
-
 class VideoStreamer:
     def __init__(self, *paths: tuple[str, ...], batch: int = 1, shape: Optional[tuple[int, int]] = None) -> None:
         """
