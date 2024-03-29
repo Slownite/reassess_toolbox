@@ -2,7 +2,7 @@ import librosa
 import numpy as np
 import soundfile as sf 
 
-class AudioWrapper:
+class AudioEager:
     def __init__(self, filepath, sr=None):
         """
         Initialize an AudioWrapper object using librosa.
