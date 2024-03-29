@@ -1,0 +1,115 @@
+#+title: Boutaina
+
+
+* Objectifs de stage
+** Preprocessing Pipeline script
+*** Traitement de l'image
+ - fixer la resolution de l'image en WxH en utilisant de l'interpolation.
+*** Traitement vidéos
+ - changer le type de vidéos .avi -> .mp4.
+ - changer le nombre de fps pour atteindre un nombre constant.
+** Traitement audio
+ - changer le sampling rate de l'audio pour qu'il soit consistant.
+ - compression pour reduction de la plage dynamique sonore.
+*** Interface
+Nous devrions avoir une command line suivant cette spécification:
+        #+begin_src language bash
+        python preprocess_pipeline.py -h
+        Usage: preprocess_pipeline [OPTIONS] [ARGUMENTS] ... [FILE/DIRECTORY] [OUTPUT_FILE/OUTPUT_DIRECTORY]
+        -r, --resolution: Width and height tuple[uint, uint]
+        -f, --format: format_initial nouveau_format (exemple .avi -> .mp4) string
+        -fr, --frame_rate: nouveau_frame_rate uint
+        -sr, --sampling_rate: nouveau_frame_rate uint
+        -c, compression: type string
+        #+end_src
+        Exemple d'utilisation:
+        #+begin_src bash
+            python preprocessing_pipeline -r 312 312 -f ".avi" ".mp4" -fr 25 -sr 48000 -c "acompressor" source_path dest_path
+        #+end_src
+*** Documentation pouvant êtrre utile:
+    - [[https://ffmpeg.org/ffmpeg.html][ffmpeg]]
+    - [[https://ffmpeg.org/ffmpeg-filters.html][ffmpeg-filter]]
+    - [[https://ffmpeg.org/ffmpeg-codecs.html][ffmpeg-codecs]]
+    - [[https://docs.python.org/3/library/subprocess.html][subprocess]]
+    - [[https://docs.python.org/3.10/library/argparse.html][argparse]]
+*** Contraintes
+    - Tout le code doit être contenu dans un seul script.
+    - Aucune dépendance à part la librairie standard n'est autorisé.
+*** Conseil
+    Utilise ffmpeg comme un programme que tu appelles dans ton script, n'utilise pas les binding python de ffmpeg.
+    Normalement tout peut-être fait avec subprocess.run et des strings interpolation.
+
+** Synchronisation EEG/son/video
+*** Conception d'une classe python
+- Conception d'une classe python capable de lire la videos de manière memory efficient.
+- Conception d'une classe python capable de lire l'audio de manière memory efficient.
+- Conception d'une classe python capable de lire le EGG en format EDF (les différentes fréquence de l'EEG ainsi que les annotations médicale) de manière memory efficient.
+*** Conception d'une classe de synchronisation
+- Implémentation d'une classe prenant les vidéos d'un patient plus l'EEG associer afin de synchronisé les 2.
+  Exemple d'utilisation:
+ #+begin_src python
+ data = ClassSynchronmisation(video1, video2, eeg, block=10)
+ array_image, array_sound, array_label, frequence_EEG = data[0]
+ print(array_image.shape[0]) # donnera 10 le nombre d'image par block
+ #+end_src
+*** Contraintes
+- Le code doit être commenter.
+- Le code doit être tester.
+** Script de conversion video en flux optique
+*** Definition du flux optique
+Le "flux optique" ou "optical flow" en anglais, fait référence à un concept et une technique utilisés en vision par ordinateur pour estimer le mouvement de points, de surfaces ou d'arêtes dans une séquence d'images. Il s'agit d'un champ vectoriel où chaque vecteur est un déplacement bidimensionnel montrant le mouvement d'un point d'une image à l'autre. Cette estimation est basée sur l'observation des changements d'intensité des motifs de l'image qui se produisent au fil du temps.
+
+Le flux optique est utilisé dans de nombreuses applications telles que la surveillance vidéo, où il peut aider à détecter des mouvements; dans les interfaces utilisateur basées sur le geste, où il peut suivre les mouvements des mains ou du corps; en robotique, pour la navigation et l'évitement d'obstacles; et dans le traitement vidéo pour des tâches telles que l'insertion d'objets dans des vidéos en mouvement, la stabilisation d'image, ou la reconstruction 3D à partir de séquences vidéo.
+
+Il existe différentes méthodes pour calculer le flux optique, allant des approches basées sur des modèles simples d'intensité constante à des méthodes plus complexes qui prennent en compte des aspects tels que la luminosité variable, les ombres, et les occlusions. Les approches classiques incluent la méthode de Lucas-Kanade, qui suppose que le flux est pratiquement constant dans un petit voisinage de l'image, et la méthode de Horn-Schunck, qui propose un modèle global imposant une régularité sur tout le champ de flux optique.
+
+*** Convertir 2 frame consecutive en un flux optique
+Ton première objectif est d'implémenter une fonctions calculant le flux optique de 2 frames.
+3 méthodes de calcul devront être implémentées:
+- [[https://docs.opencv.org/3.4/d4/dee/tutorial_optical_flow.html][Farneback]] (appelé dense optical flow)
+- [[https://stackoverflow.com/questions/37871443/how-to-compute-optical-flow-using-tvl1-opencv-function][TLV1]]
+- [[https://pytorch.org/vision/0.12/auto_examples/plot_optical_flow.html][RAFT]]
+
+*** Convertir l'ensemble de la video en flux optique et enregistrer le résultats sous forme d'image
+Ton second objectif est de transformer les differentes frames en images independante en jpeg et/ou png.
+*** Convertir l'ensemble d'une vidéo en vidéo de flux optique
+La dernière est de pouvoir transformer toutes ces image en png ou jpeg en video .mp4
+*** Interface
+        #+begin_src language bash
+        python optical_flow_conversion.py -h
+        Usage: preprocess_pipeline [OPTIONS] [ARGUMENTS] ... [FILE/DIRECTORY] [OUTPUT_FILE/OUTPUT_DIRECTORY]
+        -r, --recursion: apply recursively on a directory of videos
+        -o, --output: output format png, jpeg or mp4
+        -c, --compute_method: farneback, TLV1 or RAFT
+        #+end_src
+        Exemple d'utilisation:
+        #+begin_src bash
+            python optical_flow_conversion.py src_path dest_path -r -o "mp4" -c "RAFT"
+        #+end_src
+
+
+*** Contraintes
+- Tout le code doit être contenu dans un seul script.
+*** Conseil
+Pour la conversion d'un dossier d'images en video tu peux utilisé ffmpeg mais n'oublie pas de supprimer le directory d'images intermediaire.
+Tu pourras utilisé pathlib [[https://docs.python.org/3.10/library/tempfile.html][temp_file]] pour creer intermediaire en transformer la video en image et ensuite en video.
+** Code pour training
+*** Conception de différente class pytorch Dataset pour entrainement.
+En utilisant la classe de [[Synchronisation EEG/son/video][synchronisation]] concevoir 2 pytorch dataset classe (cf. [[https://pytorch.org/tutorials/beginner/data_loading_tutorial.html][documentation]])
+**** RGB OF image
+- La classe prendra 1 chemins vers un dossier contenant un sous-dossiers par patient contenant l'EDF, videos RGB et un sous-dossier d'image de flux optique en png ou jpeg.
+- La classe prendra un int correspondant au nombre de frames qu'on aimerais prendre.
+- La méthode src_python{__getitem__} retransformera l'optical flow video en champs vectoriel et renverra 3 pytorch tensor un correspondant frames RGB, un correpondants au frames de flux optique et un tensor contenant les annotations correspondante.
+**** RGB OF video
+- La classe prendra 1 chemins vers un dossier contenant un sous-dossiers par patient contenant l'EDF, videos RGB et vidéos de l'optical flow.
+- La classe prendra un int correspondant au nombre de frames qu'on aimerais prendre.
+- La méthode src_python{__getitem__} retransformera l'optical flow video en champs vectoriel et renverra 3 pytorch tensor un correspondant frames RGB, un correpondants au frames de flux optique et un tensor contenant les annotations correspondante.
+**** Sound
+- La classe prendra 1 chemins vers un dossier contenant un sous-dossiers par patient contenant l'EDF et le fichier video.
+- La classe prendra un int correspondant au nombre de particules sonores qu'on aimerais prendre.
+- La méthode src_python{__getitem__} récupèrera l'audio de la vidéos et renverra 2 pytorch tensor un correspondant au particules sonores et un tensor contenant les annotations correspondants.
+
+*** Implémentation de module de deep learning à partir de la litterature.
+L'objectif est que puisse apprendre à lire un papier scientifique est d'être capable de l'implé,enter en Pytorch
+**** Convolutional Two-Stream Network Fusion for Video Action Recognition
+Tu pourras trouver le papier [[https://arxiv.org/abs/1604.06573][ici]] ton objectif sera d'implémenter le réseau de neuronnes présents dans le papier et d'implémenter les différentes méthodes de fusion des modalités (RGB et Flux Optique). Tu te concentrera uniquement sur l'implémentation, nous verrons l'entrainement ensemble. *Test bien ton réseaux avec des tensor sous le bon format*.
