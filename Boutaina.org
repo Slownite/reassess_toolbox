@@ -90,6 +90,7 @@ La dernière est de pouvoir transformer toutes ces image en png ou jpeg en video
 
 *** Contraintes
 - Tout le code doit être contenu dans un seul script.
+- Si je choisis RAFT le code doit détecter si jùqi une carte graphique si tels est le cas il faut l'utilisé sinon utilisé le cpu.
 *** Conseil
 Pour la conversion d'un dossier d'images en video tu peux utilisé ffmpeg mais n'oublie pas de supprimer le directory d'images intermediaire.
 Tu pourras utilisé pathlib [[https://docs.python.org/3.10/library/tempfile.html][temp_file]] pour creer intermediaire en transformer la video en image et ensuite en video.
@@ -110,6 +111,6 @@ En utilisant la classe de [[Synchronisation EEG/son/video][synchronisation]] con
 - La méthode src_python{__getitem__} récupèrera l'audio de la vidéos et renverra 2 pytorch tensor un correspondant au particules sonores et un tensor contenant les annotations correspondants.
 
 *** Implémentation de module de deep learning à partir de la litterature.
-L'objectif est que puisse apprendre à lire un papier scientifique est d'être capable de l'implé,enter en Pytorch
+L'objectif est que puisse apprendre à lire un papier scientifique est d'être capable de l'implémenter en Pytorch
 **** Convolutional Two-Stream Network Fusion for Video Action Recognition
 Tu pourras trouver le papier [[https://arxiv.org/abs/1604.06573][ici]] ton objectif sera d'implémenter le réseau de neuronnes présents dans le papier et d'implémenter les différentes méthodes de fusion des modalités (RGB et Flux Optique). Tu te concentrera uniquement sur l'implémentation, nous verrons l'entrainement ensemble. *Test bien ton réseaux avec des tensor sous le bon format*.
