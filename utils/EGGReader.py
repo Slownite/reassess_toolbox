@@ -1,6 +1,6 @@
 import mne
 
-class EEGReaderMNE:
+class EEGReader:
     def __init__(self, edf_path):
         """
         Initialize an EEGReaderMNE object.
