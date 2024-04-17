@@ -99,7 +99,7 @@ def add_video_capture(paths: tuple[str, ...], videos: list[Any], cumul_length: l
         videos (list[Any]): The list of videos.
         cumul_length (list[int]): The cumulative length of the videos.
         shape: The desired shape of the video frames (optional).
-
+        
     Returns:
         tuple[list[Any], list[int]]: The updated list of videos and cumulative length.
     """
