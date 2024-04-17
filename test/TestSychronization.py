@@ -18,7 +18,7 @@ def main():
     eeg_sampling_rate = 256
     
     # Set the block size to 10 video frames
-    block_size_frames = 10
+    block_size_frames = 1000
     
     # Initialize the synchronizer
     synchronizer = EEGVideoSynchronizer(
