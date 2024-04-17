@@ -122,7 +122,7 @@ class AudioStream:
             if block_end_sample <= start_sample:
                 continue
 
-            # If the current block contains the start_sample
+            # If the current block contains the start_samp                      le
             if start_sample < block_end_sample:
                 start_index = max(0, start_sample - block_start_sample)
                 end_index = None if end_sample is None else end_sample - block_start_sample
