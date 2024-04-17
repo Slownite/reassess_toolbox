@@ -2,7 +2,8 @@ import subprocess
 import argparse
 from pathlib import Path
 
-def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None, audio_filter=None):
+def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None):
+
 
     cmd = ['ffmpeg', '-i', input_path]
 
@@ -22,7 +23,7 @@ def preprocessing_script(input_path, output_path, resolution=None, format=None, 
         cmd += ['-ar', str(sampling_rate)]
     if audio_filter:
         cmd += ['-af', audio_filter]  # Specifies the audio filter to use
-    if compression:
+
         cmd += ['-acodec', compression]  # L'option spécifique dépendra du type de compression désiré
 
     cmd += [output_path]
