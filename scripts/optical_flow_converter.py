@@ -1,4 +1,3 @@
-import shutil
 import cv2
 from cv2 import optflow
 
@@ -11,7 +10,6 @@ import argparse
 import os
 import subprocess
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 ##### Funtion Using the method Farneback (Desnse optical flow) #####
 
@@ -72,7 +70,7 @@ def preprocess_image_for_raft(image_tensor):
 
 
 def calc_optical_flow_raft(prev_frame, curr_frame):
-    print("Loaaaaaad model")
+    print("Load model")
     model = raft_large(weights=True, progress=True)
     model.eval()
 
@@ -111,7 +109,7 @@ def save_flow_images(flow, frame_idx, output_dir):
     cv2.imwrite(os.path.join(output_dir, f"frame_{frame_idx:04d}.png"), rgb)
     print(f"Saved frame {frame_idx}")
 
-def video_to_optical_flow(src_path, dest_path, compute_method="RAFT", output_format="mp4"):
+def video_to_optical_flow(src_path, dest_path, compute_method="farneback", output_format="mp4"):
     os.makedirs(dest_path, exist_ok=True)  # Ensure destination directory exists
     video_cap = cv2.VideoCapture(src_path)
     success, prev_frame = video_cap.read()
@@ -152,9 +150,9 @@ def video_to_optical_flow(src_path, dest_path, compute_method="RAFT", output_for
 
     print("Finished processing all frames.")
             
-def frames_to_video(frames_dir, output_video_path, frame_rate=30):
+def frames_to_video(frames_dir, output_video_path, frame_rate=25):
    
-    frames_path = str(Path(frames_dir) / "frame_%04d.png")
+    frames_path = str(Path(frames_dir) / "frame_%04d.jpeg")
     cmd = [
         "ffmpeg", "-framerate", str(frame_rate), "-i", frames_path,
         "-c:v", "libx264", "-pix_fmt", "yuv420p", output_video_path
@@ -168,12 +166,14 @@ def main():
     parser.add_argument("src_path", help="Source video path")
     parser.add_argument("dest_path", help="Destination path for optical flow video or images")
     parser.add_argument("-m", "--compute_method", choices=["farneback", "tvl1", "RAFT"], help="Method to use for optical flow computation")
-    parser.add_argument("-o", "--output_format", choices=["png", "mp4"], default="mp4",help="Output format of the results")
+    parser.add_argument("-o", "--output_format", choices=["jpeg", "mp4"], default="mp4",help="Output format of the results")
 
     args = parser.parse_args()
 
     video_to_optical_flow(args.src_path, args.dest_path, args.compute_method, args.output_format)
+
 if __name__ == "__main__":
-    video_path = "C:/Users/hp/OneDrive - Institut National de Statistique et d'Economie Appliquee/Bureau/REASSEASS/data/video1.ASF"
-    output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\RAFTtest"
-    video_to_optical_flow(video_path, output_path, "RAFT","png")
+    # video_path = "C:/Users/hp/OneDrive - Institut National de Statistique et d'Economie Appliquee/Bureau/REASSEASS/data/video1.ASF"
+    # output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\RAFTvideos"
+    # video_to_optical_flow(video_path, output_path, "farneback","mp4")
+    main()
