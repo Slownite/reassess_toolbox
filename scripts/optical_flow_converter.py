@@ -98,6 +98,12 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
 
 
 def save_flow_images(flow, frame_idx, output_dir):
+
+    """
+    Converts the optical flow vectors into polar coordinates (magnitude and angle) to represent the flow's intensity and direction.
+    Encodes the flow direction as hue and the magnitude as value in an HSV image. The saturation is set to maximum (255) to ensure color intensity.
+    Converts the HSV image to RGB for saving as a standard image format.
+    """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     hsv = np.zeros((flow.shape[0], flow.shape[1], 3), dtype=np.uint8)
@@ -106,7 +112,7 @@ def save_flow_images(flow, frame_idx, output_dir):
     hsv[..., 0] = ang * 180 / np.pi / 2
     hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
     rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    cv2.imwrite(os.path.join(output_dir, f"frame_{frame_idx:04d}.png"), rgb)
+    cv2.imwrite(os.path.join(output_dir, f"frame_{frame_idx:04d}.jpeg"), rgb)
     print(f"Saved frame {frame_idx}")
 
 def video_to_optical_flow(src_path, dest_path, compute_method="farneback", output_format="mp4"):
