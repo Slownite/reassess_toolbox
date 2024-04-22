@@ -1,6 +1,5 @@
 import cv2
 from cv2 import optflow
-
 import numpy as np
 import torch
 import torchvision.transforms as T
@@ -10,7 +9,8 @@ import argparse
 import os
 import subprocess
 from pathlib import Path
-
+import tempfile
+import shutil
 ##### Funtion Using the method Farneback (Desnse optical flow) #####
 
 def calc_optical_flow_farneback(prev_frame, curr_frame):
@@ -116,7 +116,15 @@ def save_flow_images(flow, frame_idx, output_dir):
     print(f"Saved frame {frame_idx}")
 
 def video_to_optical_flow(src_path, dest_path, compute_method="farneback", output_format="mp4"):
-    os.makedirs(dest_path, exist_ok=True)  # Ensure destination directory exists
+    """Process video to compute optical flow, saving results as images or a single video."""
+    use_temp_dir = output_format == "mp4"
+    if use_temp_dir:
+        temp_dir = tempfile.mkdtemp(dir=dest_path)
+        output_dir = temp_dir
+    else:
+        os.makedirs(dest_path, exist_ok=True)
+        output_dir = dest_path
+
     video_cap = cv2.VideoCapture(src_path)
     success, prev_frame = video_cap.read()
     if not success:
@@ -131,7 +139,6 @@ def video_to_optical_flow(src_path, dest_path, compute_method="farneback", outpu
             break
 
         print(f"Processing frame {frame_idx}")
-
         if compute_method == "RAFT":
             prev_frame_tensor = torch.from_numpy(prev_frame).permute(2, 0, 1).float() / 255.0
             curr_frame_tensor = torch.from_numpy(curr_frame).permute(2, 0, 1).float() / 255.0
@@ -145,41 +152,46 @@ def video_to_optical_flow(src_path, dest_path, compute_method="farneback", outpu
             print("Unsupported method")
             break
 
-        save_flow_images(flow, frame_idx, dest_path)
+        save_flow_images(flow, frame_idx, output_dir)
         prev_frame = curr_frame
         frame_idx += 1
 
     video_cap.release()
 
-    if output_format == "mp4":
-        frames_to_video(dest_path, os.path.join(dest_path, "output_video.mp4"))
+    if use_temp_dir:
+        frames_to_video(temp_dir, os.path.join(dest_path, Path(src_path).stem + ".mp4"))
+        shutil.rmtree(temp_dir)  # Remove the temporary directory after creating the video
 
     print("Finished processing all frames.")
-            
-def frames_to_video(frames_dir, output_video_path, frame_rate=25):
-   
-    frames_path = str(Path(frames_dir) / "frame_%04d.jpeg")
-    cmd = [
-        "ffmpeg", "-framerate", str(frame_rate), "-i", frames_path,
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", output_video_path
-    ]
-    print("Running FFmpeg command:", ' '.join(cmd))  # Print the command to check it
+
+def frames_to_video(frames_dir, output_video_path, frame_rate):
+    frames_path = str(Path(frames_dir) / "frame_%04d.png")
+    cmd = ["ffmpeg", "-framerate", str(frame_rate), "-i", frames_path,
+           "-c:v", "libx264", "-pix_fmt", "yuv420p", output_video_path]
     subprocess.run(cmd, check=True)
 
-
+def process_all_videos(source_directory, output_directory, compute_method, output_format):
+    """Process all video files in the specified directory, storing results in a separate output directory."""
+    # Create the output directory if it doesn't exist
+    os.makedirs(output_directory, exist_ok=True)
+    
+    # Process each video file in the source directory
+    for video_file in Path(source_directory).glob('*.mp4'):  # Adjust glob pattern if other video formats are needed
+        video_output_path = os.path.join(output_directory, video_file.stem)  # Create a subdirectory for each video's output
+        os.makedirs(video_output_path, exist_ok=True)
+        video_to_optical_flow(str(video_file), video_output_path, compute_method, output_format)
 def main():
     parser = argparse.ArgumentParser(description="Convert Video to Optical Flow")
-    parser.add_argument("src_path", help="Source video path")
-    parser.add_argument("dest_path", help="Destination path for optical flow video or images")
-    parser.add_argument("-m", "--compute_method", choices=["farneback", "tvl1", "RAFT"], help="Method to use for optical flow computation")
-    parser.add_argument("-o", "--output_format", choices=["jpeg", "mp4"], default="mp4",help="Output format of the results")
+    parser.add_argument("directory", help="Directory containing video files")
+    parser.add_argument("-m", "--compute_method", choices=["farneback", "tvl1", "RAFT"], default="tvl1", help="Method to use for optical flow computation")
+    parser.add_argument("-o", "--output_format", choices=["jpeg", "mp4"], default="mp4", help="Output format of the results")
 
     args = parser.parse_args()
-
-    video_to_optical_flow(args.src_path, args.dest_path, args.compute_method, args.output_format)
+    process_all_videos(args.directory, args.compute_method, args.output_format)
 
 if __name__ == "__main__":
-    # video_path = "C:/Users/hp/OneDrive - Institut National de Statistique et d'Economie Appliquee/Bureau/REASSEASS/data/video1.ASF"
-    # output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\RAFTvideos"
-    # video_to_optical_flow(video_path, output_path, "farneback","mp4")
-    main()
+    video_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\data"
+    output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\Output_tlv1"
+    process_all_videos(video_path, output_path, "tvl1","mp4")
+
+    #main()
