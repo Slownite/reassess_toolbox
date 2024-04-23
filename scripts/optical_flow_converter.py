@@ -213,6 +213,7 @@ def process_all_videos(
     os.makedirs(output_directory, exist_ok=True)
 
     # Process each video file in the source directory
+    print(source_directory)
     for video_file in Path(source_directory).glob(
         "**/*.mp4"
     ):  # Adjust glob pattern if other video formats are needed
