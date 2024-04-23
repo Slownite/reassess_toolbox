@@ -32,8 +32,6 @@ def preprocessing_script(
     if sampling_rate:
         cmd += ["-ar", str(sampling_rate)]
     if compression:
-        cmd += ["-af", audio_filter]  # Specifies the audio filter to use
-
         cmd += [
             "-acodec",
             compression,
