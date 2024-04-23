@@ -228,6 +228,7 @@ def process_all_videos(
 def main():
     parser = argparse.ArgumentParser(description="Convert Video to Optical Flow")
     parser.add_argument("directory", help="Directory containing video files")
+    parser.add_argument("out", help="output directory")
     parser.add_argument(
         "-m",
         "--compute_method",
@@ -244,7 +245,9 @@ def main():
     )
 
     args = parser.parse_args()
-    process_all_videos(args.directory, args.compute_method, args.output_format)
+    process_all_videos(
+        args.directory, args.out, args.compute_method, args.output_format
+    )
 
 
 if __name__ == "__main__":
