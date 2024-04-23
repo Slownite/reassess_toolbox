@@ -39,7 +39,7 @@ def preprocessing_script(
 
     parent = output_path.parent
     name = output_path.name
-    cmd += [parent / f"rgb_{name}.mp4"]
+    cmd += [str(parent / f"rgb_{name}.mp4")]
 
     subprocess.run(cmd, check=True)
 

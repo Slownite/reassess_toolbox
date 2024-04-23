@@ -151,7 +151,7 @@ def frames_to_video(frames_dir, output_video_path, frame_rate):
         "libx264",
         "-pix_fmt",
         "yuv420p",
-        parent / f"flow_{name}",
+        str(parent / f"flow_{name}"),
     ]
     subprocess.run(cmd, check=True)
 
