@@ -2,16 +2,7 @@ import subprocess
 import argparse
 from pathlib import Path
 
-
-def preprocessing_script(
-    input_path,
-    output_path,
-    resolution=None,
-    format=None,
-    frame_rate=None,
-    sampling_rate=None,
-    compression=None,
-):
+def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None,audio_filter=None):
     cmd = ["ffmpeg", "-i", input_path]
 
     if resolution:
