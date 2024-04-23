@@ -216,6 +216,7 @@ def process_all_videos(
     for video_file in Path(source_directory).glob(
         "**/*.mp4"
     ):  # Adjust glob pattern if other video formats are needed
+        print(video_file)
         video_output_path = os.path.join(
             output_directory, video_file.stem
         )  # Create a subdirectory for each video's output
