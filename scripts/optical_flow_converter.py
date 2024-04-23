@@ -213,11 +213,9 @@ def process_all_videos(
     os.makedirs(output_directory, exist_ok=True)
 
     # Process each video file in the source directory
-    print(source_directory)
     for video_file in Path(source_directory).glob(
         "**/*.mp4"
     ):  # Adjust glob pattern if other video formats are needed
-        print(video_file)
         video_output_path = os.path.join(
             output_directory, video_file.stem
         )  # Create a subdirectory for each video's output
@@ -250,8 +248,4 @@ def main():
 
 
 if __name__ == "__main__":
-    video_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\data"
-    output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\Output_tlv1"
-    process_all_videos(video_path, output_path, "tvl1", "mp4")
-
-    # main()
+    main()
