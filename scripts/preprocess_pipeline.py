@@ -55,7 +55,7 @@ def process_directory(
     output_dir_path = Path(output_dir)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
-    for input_file in input_dir_path.glob(f"**/*.{format[0].uppercase()}"):
+    for input_file in input_dir_path.glob(f"**/*.{format[0].upper()}"):
         output_file = output_dir_path / f"rgb_{input_file.name}"
         preprocessing_script(
             input_file,
