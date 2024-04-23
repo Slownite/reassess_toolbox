@@ -55,7 +55,7 @@ def process_directory(
     output_dir_path = Path(output_dir)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
-    for input_file in input_dir_path.glob("**/*"):
+    for input_file in input_dir_path.glob(f"**/*.{format[0]}"):
         output_file = output_dir_path / f"rgb_{input_file.name}"
         preprocessing_script(
             input_file,
@@ -86,6 +86,7 @@ def main():
         "-f",
         "--format",
         type=str,
+        default=(".avi", ".avi"),
         nargs=2,
         help="Initial format and new format (e.g., .avi .mp4)",
     )
