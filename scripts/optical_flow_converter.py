@@ -13,31 +13,37 @@ import tempfile
 import shutil
 ##### Funtion Using the method Farneback (Desnse optical flow) #####
 
+
 def calc_optical_flow_farneback(prev_frame, curr_frame):
     # Convert frames to grayscale
     prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
     curr_gray = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
 
     # Calculate dense optical flow using Farneback method
-    flow = cv2.calcOpticalFlowFarneback(prev_gray, curr_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        
+    flow = cv2.calcOpticalFlowFarneback(
+        prev_gray, curr_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+    )
+
     return flow
+
 
 ##### Funtion Using the method TLV1  #####
 
-def calc_optical_flow_tvl1(prev_frame, curr_frame):
 
+def calc_optical_flow_tvl1(prev_frame, curr_frame):
     prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
     curr_gray = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
-    
+
     # Create Optical Flow object
     optical_flow = cv2.optflow.DualTVL1OpticalFlow_create()
-    
+
     flow = optical_flow.calc(prev_gray, curr_gray, None)
-    
+
     return flow
 
+
 ##### Funtion Using THE RAFT MODEL #####
+
 
 def preprocess_image_for_raft(image_tensor):
     """
@@ -53,12 +59,12 @@ def preprocess_image_for_raft(image_tensor):
 
     # Normalize pixel values to [-1, 1]
     normalize = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    
+
     # Resize image to make dimensions divisible by 8
     new_h = math.ceil(h / 8) * 8
     new_w = math.ceil(w / 8) * 8
     resize = T.Resize((new_h, new_w))
-    
+
     image_tensor = resize(image_tensor)
     image_tensor = normalize(image_tensor)
     
@@ -72,6 +78,7 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
     print("Load model")
     model = raft_large(weights=True, progress=True)
     model.eval()
+
 
     # Preprocess images
     prev_frame = preprocess_image_for_raft(prev_frame)
@@ -88,6 +95,7 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
     flow_up = output['flow'] if isinstance(output, dict) and 'flow' in output else output[1]
 
     # Convert flow to numpy array for further processing
+
     flow_up = flow_up[0].permute(1, 2, 0).cpu().numpy()
     return flow_up
 
@@ -105,6 +113,7 @@ def save_flow_images(flow, frame_idx, output_dir):
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
     hsv = np.zeros((flow.shape[0], flow.shape[1], 3), dtype=np.uint8)
     hsv[..., 1] = 255
     mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
@@ -222,10 +231,24 @@ def video_to_optical_flow(input_data, dest_path, compute_method="farneback", out
 
 
 
+
+
 def frames_to_video(frames_dir, output_video_path, frame_rate):
+    parent = output_video_path.parent
+    name = output_video_path.name
     frames_path = str(Path(frames_dir) / "frame_%04d.png")
-    cmd = ["ffmpeg", "-framerate", str(frame_rate), "-i", frames_path,
-           "-c:v", "libx264", "-pix_fmt", "yuv420p", output_video_path]
+    cmd = [
+        "ffmpeg",
+        "-framerate",
+        str(frame_rate),
+        "-i",
+        frames_path,
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        str(parent / f"flow_{name}"),
+    ]
     subprocess.run(cmd, check=True)
 
 def process_all_videos(source_directory, output_directory, compute_method, output_format):
