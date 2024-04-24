@@ -190,6 +190,8 @@ def video_to_optical_flow(
 
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     frames_path = str(Path(frames_dir) / "frame_%04d.png")
+    parent = Path(output_video_path).parent
+    name = Path(output_video_path).name
     cmd = [
         "ffmpeg",
         "-framerate",
