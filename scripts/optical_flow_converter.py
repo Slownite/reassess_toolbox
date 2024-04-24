@@ -68,7 +68,6 @@ def preprocess_image_for_raft(image_tensor):
 
     return image_tensor
 
-
 def calc_optical_flow_raft(prev_frame, curr_frame):
     print("Load model")
     model = raft_large(weights=True, progress=True)
@@ -115,54 +114,113 @@ def save_flow_images(flow, frame_idx, output_dir):
     cv2.imwrite(os.path.join(output_dir, f"frame_{frame_idx:04d}.jpeg"), rgb)
     print(f"Saved frame {frame_idx}")
 
-def video_to_optical_flow(src_path, dest_path, compute_method="farneback", output_format="mp4"):
-    """Process video to compute optical flow, saving results as images or a single video."""
-    use_temp_dir = output_format == "mp4"
-    if use_temp_dir:
-        temp_dir = tempfile.mkdtemp(dir=dest_path)
-        output_dir = temp_dir
+# def video_to_optical_flow(src_path, dest_path, compute_method="farneback", output_format="mp4"):
+#     """Process video to compute optical flow, saving results as images or a single video."""
+#     use_temp_dir = output_format == "mp4"
+#     if use_temp_dir:
+#         temp_dir = tempfile.mkdtemp(dir=dest_path)
+#         output_dir = temp_dir
+#     else:
+#         os.makedirs(dest_path, exist_ok=True)
+#         output_dir = dest_path
+
+#     video_cap = cv2.VideoCapture(src_path)
+#     success, prev_frame = video_cap.read()
+#     if not success:
+#         print("Failed to read the first frame.")
+#         return
+
+#     frame_idx = 0
+#     while success:
+#         success, curr_frame = video_cap.read()
+#         if not success:
+#             print("No more frames to process.")
+#             break
+
+#         print(f"Processing frame {frame_idx}")
+#         if compute_method == "RAFT":
+#             prev_frame_tensor = torch.from_numpy(prev_frame).permute(2, 0, 1).float() / 255.0
+#             curr_frame_tensor = torch.from_numpy(curr_frame).permute(2, 0, 1).float() / 255.0
+#             flow = calc_optical_flow_raft(preprocess_image_for_raft(prev_frame_tensor),
+#                                           preprocess_image_for_raft(curr_frame_tensor))
+#         elif compute_method == "farneback":
+#             flow = calc_optical_flow_farneback(prev_frame, curr_frame)
+#         elif compute_method == "tvl1":
+#             flow = calc_optical_flow_tvl1(prev_frame, curr_frame)
+#         else:
+#             print("Unsupported method")
+#             break
+
+#         save_flow_images(flow, frame_idx, output_dir)
+#         prev_frame = curr_frame
+#         frame_idx += 1
+
+#     video_cap.release()
+
+#     if use_temp_dir:
+#         frames_to_video(temp_dir, os.path.join(dest_path, Path(src_path).stem + ".mp4"))
+#         shutil.rmtree(temp_dir)  # Remove the temporary directory after creating the video
+
+#     print("Finished processing all frames.")
+
+def calculate_and_save_optical_flow(prev_frame, curr_frame, frame_idx, output_dir, compute_method):
+    if compute_method == "RAFT":
+        prev_frame_tensor = torch.from_numpy(prev_frame).permute(2, 0, 1).float() / 255.0
+        curr_frame_tensor = torch.from_numpy(curr_frame).permute(2, 0, 1).float() / 255.0
+        flow = calc_optical_flow_raft(preprocess_image_for_raft(prev_frame_tensor),
+                                      preprocess_image_for_raft(curr_frame_tensor))
+    elif compute_method == "farneback":
+        flow = calc_optical_flow_farneback(prev_frame, curr_frame)
+    elif compute_method == "tvl1":
+        flow = calc_optical_flow_tvl1(prev_frame, curr_frame)
     else:
-        os.makedirs(dest_path, exist_ok=True)
-        output_dir = dest_path
+        raise ValueError(f"Unsupported optical flow method: {compute_method}")
 
-    video_cap = cv2.VideoCapture(src_path)
-    success, prev_frame = video_cap.read()
-    if not success:
-        print("Failed to read the first frame.")
-        return
+    save_flow_images(flow, frame_idx, output_dir)
 
-    frame_idx = 0
-    while success:
-        success, curr_frame = video_cap.read()
+def video_to_optical_flow(input_data, dest_path, compute_method="farneback", output_format="mp4"):
+    use_temp_dir = output_format == "mp4"
+    output_dir = tempfile.mkdtemp() if use_temp_dir else dest_path
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # If the input_data is a path to a video file
+    if isinstance(input_data, (str, Path)) and os.path.isfile(input_data):
+        video_cap = cv2.VideoCapture(str(input_data))
+        success, prev_frame = video_cap.read()
         if not success:
-            print("No more frames to process.")
-            break
+            print("Failed to read the first frame.")
+            return
 
-        print(f"Processing frame {frame_idx}")
-        if compute_method == "RAFT":
-            prev_frame_tensor = torch.from_numpy(prev_frame).permute(2, 0, 1).float() / 255.0
-            curr_frame_tensor = torch.from_numpy(curr_frame).permute(2, 0, 1).float() / 255.0
-            flow = calc_optical_flow_raft(preprocess_image_for_raft(prev_frame_tensor),
-                                          preprocess_image_for_raft(curr_frame_tensor))
-        elif compute_method == "farneback":
-            flow = calc_optical_flow_farneback(prev_frame, curr_frame)
-        elif compute_method == "tvl1":
-            flow = calc_optical_flow_tvl1(prev_frame, curr_frame)
-        else:
-            print("Unsupported method")
-            break
+        frame_idx = 0
+        while success:
+            success, curr_frame = video_cap.read()
+            if not success:
+                print("No more frames to process.")
+                break
 
-        save_flow_images(flow, frame_idx, output_dir)
-        prev_frame = curr_frame
-        frame_idx += 1
-
-    video_cap.release()
-
+            print(f"Processing frame {frame_idx}")
+            calculate_and_save_optical_flow(prev_frame, curr_frame, frame_idx, output_dir, compute_method)
+            prev_frame = curr_frame
+            frame_idx += 1
+        video_cap.release()
+        print("Finished processing all frames.")
+    # If the input_data is a list of frames
+    elif isinstance(input_data, list):
+        for frame_idx in range(len(input_data) - 1):
+            prev_frame = input_data[frame_idx]
+            curr_frame = input_data[frame_idx + 1]
+            calculate_and_save_optical_flow(prev_frame, curr_frame, frame_idx, output_dir, compute_method)
+            print("Finished processing list of frames.")
     if use_temp_dir:
-        frames_to_video(temp_dir, os.path.join(dest_path, Path(src_path).stem + ".mp4"))
-        shutil.rmtree(temp_dir)  # Remove the temporary directory after creating the video
+        # Convert saved images to a video
+        frames_to_video(output_dir, os.path.join(dest_path, "output_flow.mp4"))
+        shutil.rmtree(output_dir)  # Clean up temporary directory
 
-    print("Finished processing all frames.")
+    return os.path.join(dest_path, "output_flow.mp4") if use_temp_dir else output_dir
+
+
 
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     frames_path = str(Path(frames_dir) / "frame_%04d.png")
@@ -180,6 +238,7 @@ def process_all_videos(source_directory, output_directory, compute_method, outpu
         video_output_path = os.path.join(output_directory, video_file.stem)  # Create a subdirectory for each video's output
         os.makedirs(video_output_path, exist_ok=True)
         video_to_optical_flow(str(video_file), video_output_path, compute_method, output_format)
+        
 def main():
     parser = argparse.ArgumentParser(description="Convert Video to Optical Flow")
     parser.add_argument("directory", help="Directory containing video files")

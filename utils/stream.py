@@ -178,3 +178,10 @@ class VideoStreamer:
         video_index, index = get_position(value, self.cumul_length)
         return self.videos[video_index - 1][index]
 
+
+if __name__ == "__main__":
+    
+    video_path = "C:/Users/hp/OneDrive - Institut National de Statistique et d'Economie Appliquee/Bureau/REASSEASS/data/video1.ASF"
+
+    video = VideoCaptureWrapper(video_path)
+    print(video.__len__())
