@@ -230,13 +230,10 @@ def video_to_optical_flow(input_data, dest_path, compute_method="farneback", out
     return os.path.join(dest_path, "output_flow.mp4") if use_temp_dir else output_dir
 
 
-
-
-
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     parent = output_video_path.parent
     name = output_video_path.name
-    frames_path = str(Path(frames_dir) / "frame_%04d.png")
+    frames_path = str(Path(frames_dir) / "frame_%04d.jpeg")
     cmd = [
         "ffmpeg",
         "-framerate",
