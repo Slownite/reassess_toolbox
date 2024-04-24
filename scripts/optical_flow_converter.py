@@ -178,7 +178,9 @@ def video_to_optical_flow(
     video_cap.release()
 
     if use_temp_dir:
-        frames_to_video(temp_dir, os.path.join(dest_path, Path(src_path).stem + ".mp4"))
+        frames_to_video(
+            temp_dir, os.path.join(dest_path, Path(src_path).stem + ".mp4"), 25
+        )
         shutil.rmtree(
             temp_dir
         )  # Remove the temporary directory after creating the video
