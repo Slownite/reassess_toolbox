@@ -2,7 +2,17 @@ import subprocess
 import argparse
 from pathlib import Path
 
-def preprocessing_script(input_path, output_path, resolution=None, format=None, frame_rate=None, sampling_rate=None, compression=None,audio_filter=None):
+
+def preprocessing_script(
+    input_path,
+    output_path,
+    resolution=None,
+    format=None,
+    frame_rate=None,
+    sampling_rate=None,
+    compression=None,
+    audio_filter=None,
+):
     cmd = ["ffmpeg", "-i", input_path]
 
     if resolution:
@@ -47,7 +57,7 @@ def process_directory(
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
     for input_file in input_dir_path.glob(f"**/*{format[0].upper()}"):
-        output_file = output_dir_path / f"rgb_{input_file.name}"
+        output_file = output_dir_path / f"rgb_{input_file.stem}{format[1]}"
         preprocessing_script(
             input_file,
             output_file,
