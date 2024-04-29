@@ -175,7 +175,7 @@ def video_to_optical_flow(
     video_file, dest_path, compute_method="farneback", output_format="mp4"
 ):
     use_temp_dir = output_format == "mp4"
-    output_dir = tempfile.mkdtemp() if use_temp_dir else dest_path
+    output_dir = pathlib.Path(tempfile.mkdtemp()) if use_temp_dir else dest_path
 
     # If the input_data is a path to a video file
     video_cap = cv2.VideoCapture(str(video_file))
