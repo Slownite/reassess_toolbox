@@ -151,17 +151,12 @@ def calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method):
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     parent = output_video_path.parent
     name = output_video_path.name
-    frames_path = [
-        frames_dir / f"frame_{i:04d}.jpeg"
-        for i in range(sum(1 for _ in frames_dir.glob("**/*.jpeg")))
-    ]
-
     cmd = [
         "ffmpeg",
         "-framerate",
         str(frame_rate),
         "-i",
-        " ".join(frames_path),
+        str(frames_dir / "frame_%04d.jpeg"),
         "-c:v",
         "libx264",
         "-pix_fmt",
