@@ -173,30 +173,29 @@ def video_to_optical_flow(
     output_dir = pathlib.Path(tempfile.mkdtemp()) if use_temp_dir else dest_path
 
     # If the input_data is a path to a video file
-    # video_cap = cv2.VideoCapture(str(video_file))
-    # success, prev_frame = video_cap.read()
-    # if not success:
-    #     print("Failed to read the first frame.")
-    #     return
+    video_cap = cv2.VideoCapture(str(video_file))
+    success, prev_frame = video_cap.read()
+    if not success:
+        print("Failed to read the first frame.")
+        return
 
-    # frame_idx = 0
-    # while success:
-    #     success, curr_frame = video_cap.read()
-    #     if not success:
-    #         print("No more frames to process.")
-    #         break
+    frame_idx = 0
+    while success:
+        success, curr_frame = video_cap.read()
+        if not success:
+            print("No more frames to process.")
+            break
 
-    #     print(f"Processing frame {frame_idx}")
-    #     flow = calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method)
-    #     save_flow_images(flow, frame_idx, output_dir)
-    #     prev_frame = curr_frame
-    #     frame_idx += 1
-    # video_cap.release()
-    # print("Finished processing all frames.")
+        print(f"Processing frame {frame_idx}")
+        flow = calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method)
+        save_flow_images(flow, frame_idx, output_dir)
+        prev_frame = curr_frame
+        frame_idx += 1
+    video_cap.release()
+    print("Finished processing all frames.")
     if use_temp_dir:
         # Convert saved images to a video
-        print(dest_path / f"flow_{video_file.stem[3:]}.mp4")
-        frames_to_video(output_dir, dest_path / video_file.stem / ".mp4", 25)
+        frames_to_video(output_dir, dest_path / f"flow_{video_file.stem[4:]}.mp4", 25)
         shutil.rmtree(output_dir)
 
 
