@@ -212,7 +212,7 @@ def process_all_videos(
     output_directory.mkdir(parents=True, exist_ok=True)
 
     # Process each video file in the source directory
-    for video_file in Path(source_directory).glob(
+    for video_file in pathlib.Path(source_directory).glob(
         "**/*.mp4"
     ):  # Adjust glob pattern if other video formats are needed
         video_output_path = output_directory / video_file.stem
