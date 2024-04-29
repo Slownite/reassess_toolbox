@@ -195,7 +195,7 @@ def video_to_optical_flow(
     print("Finished processing all frames.")
     if use_temp_dir:
         # Convert saved images to a video
-        frames_to_video(output_dir, dest_path / f"flow_{video_file.stem[4:]}.mp4", 25)
+        frames_to_video(output_dir, dest_path.parent / f"{video_file.stem[4:]}.mp4", 25)
         shutil.rmtree(output_dir)
 
 
