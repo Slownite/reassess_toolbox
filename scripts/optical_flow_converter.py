@@ -175,7 +175,7 @@ def video_to_optical_flow(
     video_file, dest_path, compute_method="farneback", output_format="mp4"
 ):
     use_temp_dir = output_format == "mp4"
-    output_dir = tempfile.TemporaryDirectory() if use_temp_dir else dest_path
+    output_dir = tempfile.mkdtemp() if use_temp_dir else dest_path
 
     # If the input_data is a path to a video file
     video_cap = cv2.VideoCapture(str(video_file))
@@ -201,7 +201,7 @@ def video_to_optical_flow(
     if use_temp_dir:
         # Convert saved images to a video
         frames_to_video(output_dir, dest_path / video_file.stem / ".mp4")
-        tempfile.cleanup()
+        shutil.rmtree(output_dir)
 
 
 def process_all_videos(
