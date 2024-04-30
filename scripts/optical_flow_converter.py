@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 import tempfile
 import shutil
+
 ##### Funtion Using the method Farneback (Desnse optical flow) #####
 
 
@@ -60,14 +61,14 @@ def preprocess_image_for_raft(image_tensor):
     # Normalize pixel values to [-1, 1]
     normalize = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
-    # Resize image to make dimensions divisible by 8
+    # Resize image to make dimensions divisibsudo smartctl -a /dev/sdxle by 8
     new_h = math.ceil(h / 8) * 8
     new_w = math.ceil(w / 8) * 8
     resize = T.Resize((new_h, new_w))
 
     image_tensor = resize(image_tensor)
     image_tensor = normalize(image_tensor)
-    
+
     # Ensure batch dimension is present for RAFT processing
     if image_tensor.ndim == 3:
         image_tensor = image_tensor.unsqueeze(0)
@@ -78,7 +79,6 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
     print("Load model")
     model = raft_large(weights=True, progress=True)
     model.eval()
-
 
     # Preprocess images
     prev_frame = preprocess_image_for_raft(prev_frame)
@@ -92,7 +92,9 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
         output = model(prev_frame, curr_frame)
 
     # Check if output is a dictionary and contains 'flow', otherwise assume it's a tuple
-    flow_up = output['flow'] if isinstance(output, dict) and 'flow' in output else output[1]
+    flow_up = (
+        output["flow"] if isinstance(output, dict) and "flow" in output else output[1]
+    )
 
     # Convert flow to numpy array for further processing
 
@@ -105,7 +107,6 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
 
 
 def save_flow_images(flow, frame_idx, output_dir):
-
     """
     Converts the optical flow vectors into polar coordinates (magnitude and angle) to represent the flow's intensity and direction.
     Encodes the flow direction as hue and the magnitude as value in an HSV image. The saturation is set to maximum (255) to ensure color intensity.
@@ -194,6 +195,8 @@ def video_to_optical_flow(input_data, dest_path, compute_method="farneback", out
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+
+
     # If the input_data is a path to a video file
     if isinstance(input_data, (str, Path)) and os.path.isfile(input_data):
         video_cap = cv2.VideoCapture(str(input_data))
@@ -229,11 +232,11 @@ def video_to_optical_flow(input_data, dest_path, compute_method="farneback", out
 
     return os.path.join(dest_path, "output_flow.mp4") if use_temp_dir else output_dir
 
-
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     parent = output_video_path.parent
     name = output_video_path.name
     frames_path = str(Path(frames_dir) / "frame_%04d.jpeg")
+
     cmd = [
         "ffmpeg",
         "-framerate",
@@ -248,25 +251,49 @@ def frames_to_video(frames_dir, output_video_path, frame_rate):
     ]
     subprocess.run(cmd, check=True)
 
-def process_all_videos(source_directory, output_directory, compute_method, output_format):
+
+def process_all_videos(
+    source_directory, output_directory, compute_method, output_format
+):
     """Process all video files in the specified directory, storing results in a separate output directory."""
     # Create the output directory if it doesn't exist
     os.makedirs(output_directory, exist_ok=True)
-    
+
     # Process each video file in the source directory
-    for video_file in Path(source_directory).glob('*.mp4'):  # Adjust glob pattern if other video formats are needed
-        video_output_path = os.path.join(output_directory, video_file.stem)  # Create a subdirectory for each video's output
+    for video_file in Path(source_directory).glob(
+        "**/*.mp4"
+    ):  # Adjust glob pattern if other video formats are needed
+        video_output_path = os.path.join(
+            output_directory, video_file.stem
+        )  # Create a subdirectory for each video's output
         os.makedirs(video_output_path, exist_ok=True)
         video_to_optical_flow(str(video_file), video_output_path, compute_method, output_format)
         
+
 def main():
     parser = argparse.ArgumentParser(description="Convert Video to Optical Flow")
     parser.add_argument("directory", help="Directory containing video files")
-    parser.add_argument("-m", "--compute_method", choices=["farneback", "tvl1", "RAFT"], default="tvl1", help="Method to use for optical flow computation")
-    parser.add_argument("-o", "--output_format", choices=["jpeg", "mp4"], default="mp4", help="Output format of the results")
+    parser.add_argument("out", help="output directory")
+    parser.add_argument(
+        "-m",
+        "--compute_method",
+        choices=["farneback", "tvl1", "RAFT"],
+        default="tvl1",
+        help="Method to use for optical flow computation",
+    )
+    parser.add_argument(
+        "-o",
+        "--output_format",
+        choices=["jpeg", "mp4"],
+        default="mp4",
+        help="Output format of the results",
+    )
 
     args = parser.parse_args()
-    process_all_videos(args.directory, args.compute_method, args.output_format)
+    process_all_videos(
+        args.directory, args.out, args.compute_method, args.output_format
+    )
+
 
 if __name__ == "__main__":
     video_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\data\rgb_1.mp4"
@@ -274,3 +301,4 @@ if __name__ == "__main__":
     video_to_optical_flow(video_path, output_path, "RAFT","mp4")
 
     #main()
+
