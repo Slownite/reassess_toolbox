@@ -187,7 +187,7 @@ def calculate_and_save_optical_flow(prev_frame, curr_frame, frame_idx, output_di
 
     save_flow_images(flow, frame_idx, output_dir)
 
-def video_to_optical_flow(input_data, dest_path, compute_method="farneback", output_format="mp4"):
+def video_to_optical_flow(input_data, dest_path, compute_method="farneback", output_format="mp4",frame_rate=20):
     use_temp_dir = output_format == "mp4"
     output_dir = tempfile.mkdtemp() if use_temp_dir else dest_path
 
@@ -224,7 +224,7 @@ def video_to_optical_flow(input_data, dest_path, compute_method="farneback", out
             print("Finished processing list of frames.")
     if use_temp_dir:
         # Convert saved images to a video
-        frames_to_video(output_dir, os.path.join(dest_path, "output_flow.mp4"))
+        frames_to_video(output_dir, os.path.join(dest_path, "output_flow.mp4"),frame_rate)
         shutil.rmtree(output_dir)  # Clean up temporary directory
 
     return os.path.join(dest_path, "output_flow.mp4") if use_temp_dir else output_dir
@@ -269,8 +269,8 @@ def main():
     process_all_videos(args.directory, args.compute_method, args.output_format)
 
 if __name__ == "__main__":
-    video_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\data"
-    output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\Output_tlv1"
-    process_all_videos(video_path, output_path, "tvl1","mp4")
+    video_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\data\rgb_1.mp4"
+    output_path = r"C:\Users\hp\OneDrive - Institut National de Statistique et d'Economie Appliquee\Bureau\REASSEASS\Output_RAFT"
+    video_to_optical_flow(video_path, output_path, "RAFT","mp4")
 
     #main()
