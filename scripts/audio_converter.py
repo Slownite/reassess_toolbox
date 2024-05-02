@@ -62,7 +62,7 @@ def main() -> None:
     """
     parser = argparse.ArgumentParser(
         prog="video to audio converter",
-        descripton="create mp3 files from the audio of mp4 file",
+        description="create mp3 files from the audio of mp4 file",
         epilog="use the -h flag to know more",
     )
     parser.add_argument("src_path", type=pathlib.Path)
