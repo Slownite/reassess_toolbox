@@ -69,3 +69,7 @@ def main() -> None:
     parser.add_argument("dest_path", type=pathlib.Path)
     args = parser.parse_args()
     run(args)
+
+
+if __name__ == "__main__":
+    main()
