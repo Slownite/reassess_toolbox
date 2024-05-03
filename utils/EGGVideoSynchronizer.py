@@ -7,11 +7,12 @@ from pyedflib import highlevel
 
 import re
 from pathlib import Path
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from utils.AudioStream import AudioStream
 from utils.EGGReader import EEGStream
 from utils.stream import VideoStreamer
+
 
 from scripts.optical_flow_converter import process_all_videos, video_to_optical_flow
 
@@ -42,6 +43,9 @@ class EEGVideoSynchronizer:
 
         video_flow_paths = [str(p) for p in Path(directory_path).glob("flow_*.mp4")]
         self.video_flow= VideoStreamer(*video_flow_paths)
+        
+        audio_paths= [str(p) for p in Path(directory_path).glob("audio_*.wav")]
+        self.audio_stream = AudioStream(*audio_paths)
 
         # # Setup paths for concatenated video and EEG files
         # self.video_path = self.find_files(video_directory, "*.mp4")
@@ -82,9 +86,9 @@ class EEGVideoSynchronizer:
         eeg_data = self.eeg_stream[block_idx]
 
         annotations = self.eeg_stream.get_annotations_in_chunk(block_idx)
+        audio_data = self.audio_stream[start_frame:end_frame]
         
-        
-        return (video_frames, video_flows, eeg_data, annotations)
+        return (video_frames, video_flows, eeg_data, annotations, audio_data)
 
 if __name__ == '__main__':
     directory_path = 'C:/Users/hp/OneDrive - Institut National de Statistique et d\'Economie Appliquee/Bureau/REASSEASS/data/'
@@ -92,3 +96,10 @@ if __name__ == '__main__':
     
     block_data = synchronizer.get_block(0)
     print(block_data)
+
+    video_frames, video_flows, eeg_data, annotations, audio_data = block_data
+    
+    print("Number of video frames:", len(video_frames))
+    print("EEG data shape:", eeg_data.shape)
+    print("Number of annotations:", len(annotations))
+    print("Audio data samples:", audio_data.shape)

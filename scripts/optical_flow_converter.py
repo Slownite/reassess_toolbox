@@ -144,9 +144,7 @@ def calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method):
         flow = calc_optical_flow_tvl1(prev_frame, curr_frame)
     else:
         raise ValueError(f"Unsupported optical flow method: {compute_method}")
-
     return flow
-
 
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     parent = output_video_path.parent
@@ -244,4 +242,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+  main()
+
