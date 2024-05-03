@@ -101,8 +101,9 @@ Tu pourras utilisé pathlib [[https://docs.python.org/3.10/library/tempfile.html
 *** Lecture Bibliographique (presentation le 15 mai)
 1. [[https://arxiv.org/abs/1406.2199][Two-Stream Convolutional Networks for Action Recognition in Videos]]
 2. [[https://arxiv.org/abs/1604.06573][Convolutional Two-Stream Network Fusion for Video Action Recognition]]
-3. [[https://arxiv.org/abs/1706.03762][Attention Is All You Need]]
-4. [[https://arxiv.org/pdf/2305.19624][A Multi-Modal Transformer Network for Action Detection]]
+3. [[https://arxiv.org/abs/1705.07750][Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset]]
+4. [[https://arxiv.org/abs/1706.03762][Attention Is All You Need]]
+5. [[https://arxiv.org/pdf/2305.19624][A Multi-Modal Transformer Network for Action Detection]]
 *** Implémentation de modèles de Deep Learning.
 
 **** Implémentation de multi-modal transformer.
