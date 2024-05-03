@@ -90,27 +90,22 @@ La dernière est de pouvoir transformer toutes ces image en png ou jpeg en video
 
 *** Contraintes
 - Tout le code doit être contenu dans un seul script.
-- Si je choisis RAFT le code doit détecter si jùqi une carte graphique si tels est le cas il faut l'utilisé sinon utilisé le cpu.
+- Si je choisis RAFT le code doit détecter si j'ai une carte graphique si tels est le cas il faut l'utilisé sinon utilisé le cpu.
 *** Conseil
 Pour la conversion d'un dossier d'images en video tu peux utilisé ffmpeg mais n'oublie pas de supprimer le directory d'images intermediaire.
 Tu pourras utilisé pathlib [[https://docs.python.org/3.10/library/tempfile.html][temp_file]] pour creer intermediaire en transformer la video en image et ensuite en video.
-** Code pour training
-*** Conception de différente class pytorch Dataset pour entrainement.
-En utilisant la classe de [[Synchronisation EEG/son/video][synchronisation]] concevoir 2 pytorch dataset classe (cf. [[https://pytorch.org/tutorials/beginner/data_loading_tutorial.html][documentation]])
-**** RGB OF image
-- La classe prendra 1 chemins vers un dossier contenant un sous-dossiers par patient contenant l'EDF, videos RGB et un sous-dossier d'image de flux optique en png ou jpeg.
-- La classe prendra un int correspondant au nombre de frames qu'on aimerais prendre.
-- La méthode src_python{__getitem__} retransformera l'optical flow video en champs vectoriel et renverra 3 pytorch tensor un correspondant frames RGB, un correpondants au frames de flux optique et un tensor contenant les annotations correspondante.
-**** RGB OF video
-- La classe prendra 1 chemins vers un dossier contenant un sous-dossiers par patient contenant l'EDF, videos RGB et vidéos de l'optical flow.
-- La classe prendra un int correspondant au nombre de frames qu'on aimerais prendre.
-- La méthode src_python{__getitem__} retransformera l'optical flow video en champs vectoriel et renverra 3 pytorch tensor un correspondant frames RGB, un correpondants au frames de flux optique et un tensor contenant les annotations correspondante.
-**** Sound
-- La classe prendra 1 chemins vers un dossier contenant un sous-dossiers par patient contenant l'EDF et le fichier video.
-- La classe prendra un int correspondant au nombre de particules sonores qu'on aimerais prendre.
-- La méthode src_python{__getitem__} récupèrera l'audio de la vidéos et renverra 2 pytorch tensor un correspondant au particules sonores et un tensor contenant les annotations correspondants.
+** Collecte de donnée
+*** Extraire l'ensemble des vidéos et EEG en format EDF de l'unité de neuro-pediqtrie à Raymond Poincaré.
+*** Extraire et analyser les différentes classe provenant de RPC dataset et selectionné le groupe le plus intéressant en termes de reconnaissance d'action.
+** Modèle de Deep Learning
+*** Lecture Bibliographique (presentation le 15 mai)
+1. [[https://arxiv.org/abs/1406.2199][Two-Stream Convolutional Networks for Action Recognition in Videos]]
+2. [[https://arxiv.org/abs/1604.06573][Convolutional Two-Stream Network Fusion for Video Action Recognition]]
+3. [[https://arxiv.org/abs/1706.03762][Attention Is All You Need]]
+4. [[https://arxiv.org/pdf/2305.19624][A Multi-Modal Transformer Network for Action Detection]]
+*** Implémentation de modèles de Deep Learning.
 
-*** Implémentation de module de deep learning à partir de la litterature.
-L'objectif est que puisse apprendre à lire un papier scientifique est d'être capable de l'implémenter en Pytorch
-**** Convolutional Two-Stream Network Fusion for Video Action Recognition
-Tu pourras trouver le papier [[https://arxiv.org/abs/1604.06573][ici]] ton objectif sera d'implémenter le réseau de neuronnes présents dans le papier et d'implémenter les différentes méthodes de fusion des modalités (RGB et Flux Optique). Tu te concentrera uniquement sur l'implémentation, nous verrons l'entrainement ensemble. *Test bien ton réseaux avec des tensor sous le bon format*.
+**** Implémentation de multi-modal transformer.
+L'implementation comprendra bien sûr une certaines modularité pour faire evolué le modèle.
+**** Implémentation de la boucle d'entraînement.
+Tu devra appliquer ce modèle sur le dataset RPC.
