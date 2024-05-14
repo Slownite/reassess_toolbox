@@ -10,7 +10,9 @@ class TwoStreamDataset(Dataset):
         of = list(path.glob("**/flow_*.mp4"))
         egg = list(path.glob("**/*.edf"))
         self.block = block
-        self.data = EEGVideoSynchronizer(rgb, of, egg, block_size_frames=self.block)
+        self.data = EEGVideoSynchronizer(
+            rgb, of, egg, audio, block_size_frames=self.block
+        )
         self.size = len(VideoStreamer(*of, batch=block))
 
     def __len__(self):
@@ -21,7 +23,7 @@ class TwoStreamDataset(Dataset):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
-        frames, compressed_flows, _, _, annotations = self.data[index]
+        frames, compressed_flows, _, annotations, _ = self.data[index]
         if compressed_flows.shape[0] != self.block:
             return None
         center_rgb_frame = torch.tensor(frames[len(frames) // 2]).permute(3, 0, 1, 2)
