@@ -335,3 +335,22 @@ class InceptionI3d(nn.Module):
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
         return self.avg_pool(x)
+
+class I3D(nn.Module):
+    def __init__(num_classes: int = 2, in_channels=3)->None:
+        self.core = InceptionI3d(in_channels=in_channels, endpoint="Mixed_5c")
+        self.logits = Unit3D(in_channels=384+384+128+128, output_channels=num_classes,
+                             kernel_shape=[1, 1, 1],
+                             padding=0,
+                             activation_fn=None,
+                             use_batch_norm=False,
+                             use_bias=True,
+                             name='logits')
+    def forward(X: torch.Tensor)->torch.Tensor:
+        embedding_vector = self.core.extract_features(X)
+        x = self.logits(self.dropout(embedding_vector))
+        if self.core._spatial_squeeze:
+            logits = x.squeeze(3).squeeze(3)
+        # logits is batch X time X classes, which is what we want to work with
+        return logits
+
