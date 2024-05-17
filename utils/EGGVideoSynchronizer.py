@@ -19,8 +19,7 @@ from scripts.optical_flow_converter import process_all_videos, video_to_optical_
 
 
 class EEGVideoSynchronizer:
-
-    def __init__(self, rgb, of, eeg, audio, eeg_sampling_rate, block_size_frames):
+    def __init__(self, rgb=None, of=None, eeg=None, audio=None, block_size_frames=50):
         """
         Initializes the EEGVideoSynchronizer object.
 
@@ -36,20 +35,28 @@ class EEGVideoSynchronizer:
         self.eeg_sampling_rate = eeg_sampling_rate
         self.block_size_frames = block_size_frames
 
-        # Initialize the video streamer with all video files found in the directory
-        video_rgb_paths = [str(p) for p in rgb]
-        self.video_rgb = VideoStreamer(*video_rgb_paths)
-
-        eeg_paths = tuple(str(p) for p in eeg)
-        self.eeg_stream = EEGStream(
-            *eeg_paths, chunk_duration=self.block_size_frames / video_frame_rate
-        )
-
-        video_flow_paths = [str(p) for p in of]
-        self.video_flow = VideoStreamer(*video_flow_paths)
-
-        audio_paths = [str(p) for p in audio]
-        self.audio_stream = AudioStream(*audio_paths)
+        if eeg is not None:
+            eeg_paths = tuple(str(p) for p in eeg)
+            self.eeg_stream = EEGStream(
+                *eeg_paths, chunk_duration=self.block_size_frames / 25
+            )
+        else:
+            self.eeg_stream = None
+        if rgb is not None:
+            video_rgb_paths = [str(p) for p in rgb]
+            self.video_rgb = VideoStreamer(*video_rgb_paths)
+        else:
+            self.video_rgb = None
+        if of is not None:
+            video_flow_paths = [str(p) for p in of]
+            self.video_flow = VideoStreamer(*video_flow_paths)
+        else:
+            self.video_flow = None
+        if audio is not None:
+            audio_paths = [str(p) for p in audio]
+            self.audio_stream = AudioStream(*audio_paths)
+        else:
+            self.audio_stream = None
 
         # # Setup paths for concatenated video and EEG files
         # self.video_path = self.find_files(video_directory, "*.mp4")
@@ -78,15 +85,17 @@ class EEGVideoSynchronizer:
 
         # Fetch video frames for each video streamer
         # video_frames = self.video_capture.get_frames(start_frame, end_frame)
-
-        video_frames = self.video_rgb[start_frame:end_frame]
-        video_flows = self.video_flow[start_frame:end_frame]
+        video_frames = (
+            None if self.video_rgb is None else self.video_rgb[start_frame:end_frame]
+        )
+        video_flows = (
+            None if self.video_flow is None else self.video_flow[start_frame:end_frame]
+        )
 
         # Calculate corresponding EEG sample range
         # start_sample = int(start_frame * self.samples_per_frame)
         # end_sample = int(end_frame * self.samples_per_frame)
-
-        eeg_data = self.eeg_stream[block_idx]
+        eeg_data = None if self.eeg_stream is None else self.eeg_stream[block_idx]
 
         annotations = self.eeg_stream.get_annotations_in_chunk(block_idx)
         audio_data = self.audio_stream[start_frame:end_frame]
@@ -117,7 +126,7 @@ class EEGVideoSynchronizer:
 if __name__ == "__main__":
     directory_path = "C:/Users/hp/OneDrive - Institut National de Statistique et d'Economie Appliquee/Bureau/REASSEASS/data/"
     synchronizer = EEGVideoSynchronizer(
-        directory_path, video_frame_rate=20, eeg_sampling_rate=256, block_size_frames=10
+        directory_path, video_frame_rate=20, block_size_frames=10
     )
 
     block_data = synchronizer.get_item(0)
