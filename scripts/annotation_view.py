@@ -7,16 +7,22 @@ import argparse
 
 def get_unique_annotations_from_file(edf_file_path):
     """Retrieve unique annotations from a single EDF file."""
-    # Read the EDF file
-    raw = mne.io.read_raw_edf(edf_file_path, preload=True, verbose=False)
+    try:
+        # Read the EDF file with specified encoding
+        raw = mne.io.read_raw_edf(
+            edf_file_path, preload=True, verbose=False, encoding="latin1"
+        )
 
-    # Extract annotations
-    annotations = raw.annotations
+        # Extract annotations
+        annotations = raw.annotations
 
-    # Extract unique descriptions
-    unique_annotations = set(annotations.description)
+        # Extract unique descriptions
+        unique_annotations = set(annotations.description)
 
-    return unique_annotations
+        return unique_annotations
+    except Exception as e:
+        print(f"Error reading {edf_file_path}: {e}")
+        return set()
 
 
 def process_path(path):
