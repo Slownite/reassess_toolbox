@@ -29,7 +29,7 @@ def process_path(path):
         unique_annotations.update(get_unique_annotations_from_file(path))
     elif path.is_dir():
         # Process all EDF files in the directory
-        for edf_file in path.glob("*.edf"):
+        for edf_file in path.glob("**/*.edf"):
             unique_annotations.update(get_unique_annotations_from_file(edf_file))
     else:
         print(
