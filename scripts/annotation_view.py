@@ -48,7 +48,7 @@ def main():
     )
     parser.add_argument(
         "path",
-        type=pathlib.Path,
+        type=Path,
         help="Path to an EDF file or a directory containing EDF files",
     )
     args = parser.parse_args()
