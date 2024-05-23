@@ -2,7 +2,7 @@
 import torch
 from torch.utils.data import Dataset
 import pathlib
-from utils import (
+from ..utils import (
     EEGVideoSynchronizer,
     VideoStreamer,
     videos_frame_to_flow,
