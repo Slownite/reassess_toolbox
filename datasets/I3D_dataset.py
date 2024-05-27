@@ -14,15 +14,11 @@ class I3DDatasetRGB(Dataset):
     def __init__(
         self, path: pathlib.Path, annotation_schema_path: pathlib.Path, block=75
     ) -> None:
-        of = list(path.glob("**/flow_*.mp4"))
         rgb = list(path.glob("**/rgb_*.mp4"))
-        audio = list(path.glob("**/*.mp3"))
         egg = list(path.glob("**/*.edf"))
         self.block = block
-        self.data = EEGVideoSynchronizer(
-            rgb, of, egg, audio, block_size_frames=self.block
-        )
-        self.size = len(VideoStreamer(*of, batch=block))
+        self.data = EEGVideoSynchronizer(rgb=rgb, egg=egg, block_size_frames=self.block)
+        self.size = len(VideoStreamer(*map(str, rgb), batch=block))
         with open(annotation_schema_path, "r") as file:
             self.annotation_schema = json.load(file)
 
@@ -49,14 +45,10 @@ class I3DDatasetOF(Dataset):
         self, path: pathlib.Path, annotation_schema_path: pathlib.Path, block=75
     ) -> None:
         of = list(path.glob("**/flow_*.mp4"))
-        rgb = list(path.glob("**/rgb_*.mp4"))
-        audio = list(path.glob("**/*.mp3"))
         egg = list(path.glob("**/*.edf"))
         self.block = block
-        self.data = EEGVideoSynchronizer(
-            rgb, of, egg, audio, block_size_frames=self.block
-        )
-        self.size = len(VideoStreamer(*of, batch=block))
+        self.data = EEGVideoSynchronizer(of=of, egg=egg, block_size_frames=self.block)
+        self.size = len(VideoStreamer(*map(str, of), batch=block))
         with open(annotation_schema_path, "r") as file:
             self.annotation_schema = json.load(file)
 
