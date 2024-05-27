@@ -32,7 +32,6 @@ class EEGVideoSynchronizer:
             compute_method (str): Method for computing optical flow.
         """
         self.video_frame_rate = 25
-        self.eeg_sampling_rate = eeg_sampling_rate
         self.block_size_frames = block_size_frames
 
         if eeg is not None:
