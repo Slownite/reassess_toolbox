@@ -14,7 +14,9 @@ class I3DDatasetRGB(Dataset):
     def __init__(
         self, path: pathlib.Path, annotation_schema_path: pathlib.Path, block=75
     ) -> None:
+        of = list(path.glob("**/flow_*.mp4"))
         rgb = list(path.glob("**/rgb_*.mp4"))
+        audio = list(path.glob("**/*.mp3"))
         egg = list(path.glob("**/*.edf"))
         self.block = block
         self.data = EEGVideoSynchronizer(
@@ -47,6 +49,8 @@ class I3DDatasetOF(Dataset):
         self, path: pathlib.Path, annotation_schema_path: pathlib.Path, block=75
     ) -> None:
         of = list(path.glob("**/flow_*.mp4"))
+        rgb = list(path.glob("**/rgb_*.mp4"))
+        audio = list(path.glob("**/*.mp3"))
         egg = list(path.glob("**/*.edf"))
         self.block = block
         self.data = EEGVideoSynchronizer(
