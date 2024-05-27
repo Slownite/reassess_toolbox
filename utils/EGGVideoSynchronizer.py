@@ -101,6 +101,9 @@ class EEGVideoSynchronizer:
 
         return (video_frames, video_flows, eeg_data, annotations, audio_data)
 
+    def __len__(self):
+        return self.video_rgb
+
     def __getitem__(self, value):
         """
         Get a sample of samples of the data stream.
