@@ -8,6 +8,7 @@ from ..utils import (
     videos_frame_to_flow,
     one_hot_encoding,
 )
+import json
 
 
 class I3DDatasetRGB(Dataset):
