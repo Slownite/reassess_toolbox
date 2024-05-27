@@ -433,7 +433,7 @@ class InceptionI3d(nn.Module):
 
 
 class I3D(nn.Module):
-    def __init__(num_classes: int = 2, in_channels=3) -> None:
+    def __init__(self, num_classes: int = 2, in_channels=3) -> None:
         self.core = InceptionI3d(in_channels=in_channels, final_endpoint="Mixed_5c")
         self.logits = Unit3D(
             in_channels=384 + 384 + 128 + 128,
