@@ -4,6 +4,7 @@ from ..modules import I3D
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
 from ..utils import VideoStreamer
+
 class I3DDatasetRGB(Dataset):
     def __init__(
         self, path: pathlib.Path, block=66
@@ -58,9 +59,18 @@ class I3DDatasetOF(Dataset):
             uf_depth * uf_vectors, uf_width, uf_width
         )
         return stack_flows
-def init(args)->[I3D, DataLoader]:
-    if args.model = "i3d_rgb":
-        model = I3D(2)
 
+def init(args)->[I3D, Dataset]:
+    if args.model == "rgb":
+        model = I3D(num_classes = args.target, in_channels=3)
+        dataset = I3DDatasetRGB(args.source_directory, block=window_size)
+    elif args.modle == "of":
+        model = I3D(num_classes = args.target, in_channels=2)
+        dataset = I3DDatasetRGB(args.source_directory, block=window_size)
+    else:
+        raise ValueError("model type should be rgb or of")
+    return model, dataset
+
+def extract(model:nn.Module,
 def main():
     pass
