@@ -446,8 +446,10 @@ class I3D(nn.Module):
             use_bias=True,
             name="logits",
         )
+    def extract(self, X: torch.Tensor)->torch.Tensor:
+        return self.core.extract_features(X)
 
-    def forward(X: torch.Tensor) -> torch.Tensor:
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         embedding_vector = self.core.extract_features(X)
         x = self.logits(self.dropout(embedding_vector))
         if self.core._spatial_squeeze:
