@@ -3,7 +3,7 @@ import torch
 from modules import I3D
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
-from utils import VideoStreamer
+from utils import VideoStreamer, pad_to_shape
 from argparse import ArgumentParser
 from tqdm.auto import tqdm
 import pathlib
@@ -25,13 +25,14 @@ class I3DDatasetRGB(Dataset):
         i = index * self.block
         j = i + self.block
         rgb_frames = self.data[i:j]
+        if rgb_frames.shape[0] < 66:
+            rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
             self.block,
             224,
             224,
             3,
         ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224, 3) "
-        print(rgb_frames.shape)
         rgb_frames = torch.Tensor(rgb_frames).permute(3, 0, 1, 2)
         return rgb_frames
 
@@ -52,6 +53,8 @@ class I3DDatasetOF(Dataset):
         i = index * self.block
         j = i + self.block
         compressed_flows = self.data[i:j]
+        if rgb_frames.shape[0] < 66:
+            rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert compressed_flows.shape == (
             self.block,
             224,
@@ -137,7 +140,6 @@ def main():
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=True,
-        drop_last=True,
     )
     extract_and_save(
         model,
