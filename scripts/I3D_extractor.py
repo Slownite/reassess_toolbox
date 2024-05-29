@@ -25,6 +25,7 @@ class I3DDatasetRGB(Dataset):
         i = index * self.block
         j = i + self.block
         rgb_frames = self.data[i:j]
+        print(rgb_frames)
         if rgb_frames.shape[0] < 66:
             rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
@@ -53,8 +54,8 @@ class I3DDatasetOF(Dataset):
         i = index * self.block
         j = i + self.block
         compressed_flows = self.data[i:j]
-        if rgb_frames.shape[0] < 66:
-            rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
+        if compressed_flows.shape[0] < 66:
+            compressed_flows = pad_to_shape(compressed_flows, (66, 224, 224, 3))
         assert compressed_flows.shape == (
             self.block,
             224,
