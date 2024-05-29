@@ -6,6 +6,7 @@ from torch import nn
 from utils import VideoStreamer
 from argparse import ArgumentParser
 from tqdm.auto import tqdm
+import pathlib
 
 
 class I3DDatasetRGB(Dataset):
