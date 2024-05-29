@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import torch
-from modules import I3D
+from ..modules import I3D
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
-from utils import VideoStreamer
+from ..utils import VideoStreamer
 from argparse import ArgumentParser
 from tqdm.auto import tqdm
 
