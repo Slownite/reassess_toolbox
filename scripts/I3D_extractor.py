@@ -12,7 +12,7 @@ import pathlib
 class I3DDatasetRGB(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, path), batch=block)
+        self.data = VideoStreamer(str(path), batch=block)
 
     def __len__(self):
         return self.size
@@ -34,7 +34,7 @@ class I3DDatasetRGB(Dataset):
 class I3DDatasetOF(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, path), batch=block)
+        self.data = VideoStreamer(str(path), batch=block)
 
     def __len__(self):
         return self.size
