@@ -11,7 +11,7 @@ import pathlib
 class I3DDatasetRGB(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(str(path))
+        self.data = VideoStreamer(*map(str, path))
 
     def __len__(self):
         return len(self.data) // self.block
@@ -23,7 +23,7 @@ class I3DDatasetRGB(Dataset):
             raise IndexError(f"index: {index} is out bound!")
         i = index * self.block
         j = i + self.block
-        rgb_frames = self.data[i:j]
+        rgb_frames, files = self.data[i:j]
         if rgb_frames.shape[0] < 66:
             rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
@@ -33,13 +33,13 @@ class I3DDatasetRGB(Dataset):
             3,
         ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224, 3) "
         rgb_frames = torch.Tensor(rgb_frames).permute(3, 0, 1, 2)
-        return rgb_frames
+        return (rgb_frames, file)
 
 
 class I3DDatasetOF(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(str(path))
+        self.data = VideoStreamer(*map(str, path))
 
     def __len__(self):
         return len(self.data)
@@ -51,7 +51,7 @@ class I3DDatasetOF(Dataset):
             raise IndexError(f"index: {index} is out bound!")
         i = index * self.block
         j = i + self.block
-        compressed_flows = self.data[i:j]
+        compressed_flows, files = self.data[i:j]
         if compressed_flows.shape[0] < 66:
             compressed_flows = pad_to_shape(compressed_flows, (66, 224, 224, 3))
         assert compressed_flows.shape == (
@@ -67,7 +67,7 @@ class I3DDatasetOF(Dataset):
         stack_flows = uncompressed_flow.reshape(
             uf_depth * uf_vectors, uf_width, uf_width
         )
-        return stack_flows
+        return stack_flows, files
 
 
 def init(args) -> [I3D, Dataset]:
@@ -118,10 +118,10 @@ def extract_and_save(
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for data in loader:
+        for data, files in loader:
             data = data.to(device, non_blocking=True)
             embeddings = model.extract(data)
-            write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
+            write_embedding_to_file_in_chunks(embeddings.cpu(), pathlib.Path(files[0]))
 
 
 def main():

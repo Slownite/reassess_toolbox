@@ -3,6 +3,7 @@ from typing import Optional
 import cv2 as cv
 import numpy as np
 
+
 def get_position(value: int, acc_arr: list[int]) -> tuple[int, int]:
     """
     Get the position of a value in an accumulated array.
@@ -90,7 +91,9 @@ class VideoCaptureWrapper:
         self.cap.release()
 
 
-def add_video_capture(paths: tuple[str, ...], videos: list[Any], cumul_length: list[int], shape=None) -> tuple[list[Any], list[int]]:
+def add_video_capture(
+    paths: tuple[str, ...], videos: list[Any], cumul_length: list[int], shape=None
+) -> tuple[list[Any], list[int], list[str]]:
     """
     Add video capture objects to the list of videos.
 
@@ -99,20 +102,28 @@ def add_video_capture(paths: tuple[str, ...], videos: list[Any], cumul_length: l
         videos (list[Any]): The list of videos.
         cumul_length (list[int]): The cumulative length of the videos.
         shape: The desired shape of the video frames (optional).
-        
+
     Returns:
         tuple[list[Any], list[int]]: The updated list of videos and cumulative length.
     """
+    files = []
     for _, file in enumerate(paths):
         vid = VideoCaptureWrapper(file, shape=shape)
         num_frames = int(len(vid))
         new_cumul_length = cumul_length[-1] + num_frames
         videos.append(vid)
         cumul_length.append(new_cumul_length)
-    return videos, cumul_length
+        files.append(file)
+    return videos, cumul_length, files
+
 
 class VideoStreamer:
-    def __init__(self, *paths: tuple[str, ...], batch: int = 1, shape: Optional[tuple[int, int]] = None) -> None:
+    def __init__(
+        self,
+        *paths: tuple[str, ...],
+        batch: int = 1,
+        shape: Optional[tuple[int, int]] = None
+    ) -> None:
         """
         Initialize a VideoStreamer object.
 
@@ -123,7 +134,9 @@ class VideoStreamer:
         """
         self.batch = batch
         self.shape = shape
-        self.videos, self.cumul_length = add_video_capture(paths, [], [0], self.shape)
+        self.videos, self.cumul_length, self.files = add_video_capture(
+            paths, [], [0], self.shape
+        )
 
     def append(self, *paths: tuple[str, ...]):
         """
@@ -132,7 +145,9 @@ class VideoStreamer:
         Args:
             paths (tuple[str, ...]): The paths of the videos.
         """
-        videos, cumul_length = add_video_capture(paths, self.videos, self.cumul_length, self.shape)
+        videos, cumul_length = add_video_capture(
+            paths, self.videos, self.cumul_length, self.shape
+        )
         self.videos = videos
         self.cumul_length = cumul_length
 
@@ -157,7 +172,14 @@ class VideoStreamer:
         """
         if isinstance(value, slice):
             start, stop, step = value.indices(len(self))
-            return np.array([self.get_item(i) for i in range(start, stop, step)])
+            array = []
+            files = []
+            for i in range(start, stop, step):
+                item, file = self.get_item(i)
+                array.append(item)
+                files.append(file)
+            return np.array(array), files
+
         elif isinstance(value, int):
             if value >= len(self) or value < 0:
                 raise IndexError("Index out of bounds")
@@ -176,11 +198,10 @@ class VideoStreamer:
             np.ndarray: The frame from the video stream.
         """
         video_index, index = get_position(value, self.cumul_length)
-        return self.videos[video_index - 1][index]
+        return self.videos[video_index - 1][index], self.files[video_index - 1]
 
 
 if __name__ == "__main__":
-    
     video_path = "C:/Users/hp/OneDrive - Institut National de Statistique et d'Economie Appliquee/Bureau/REASSEASS/data/video1.ASF"
 
     video = VideoCaptureWrapper(video_path)
