@@ -81,6 +81,7 @@ def init(args) -> [I3D, Dataset]:
         dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
     else:
         raise ValueError("model type should be rgb or of")
+    model.build()
     return model, dataset
 
 
