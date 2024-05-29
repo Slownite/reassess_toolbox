@@ -22,12 +22,16 @@ class I3DDatasetRGB(Dataset):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
-        rgb_frames = self.data[index]
+        i = index * self.block
+        j = i + self.block
+        rgb_frames = self.data[i:j]
         assert rgb_frames.shape == (
             self.block,
             224,
             224,
-        ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224) "
+            3,
+        ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224, 3) "
+        rgb_frames = rgb_frames.permute(3, 0, 1, 2)
         return rgb_frames
 
 
@@ -49,7 +53,8 @@ class I3DDatasetOF(Dataset):
             self.block,
             224,
             224,
-        ), f"compressed_flows shape is {compressed_flow.shape}, should be ({self.block}, 224, 224)"
+            2,
+        ), f"compressed_flows shape is {compressed_flow.shape}, should be ({self.block}, 224, 224, 2)"
         uncompressed_flow = torch.tensor(videos_frame_to_flow(flows)).permute(
             3, 0, 1, 2
         )
