@@ -94,7 +94,7 @@ def write_embedding_to_file_in_chunks(embedding, filename):
         # Open the file in write mode
         with open(filename, "ab") as file:
             torch.save(embedding, file)
-        print(f"Embedding successfully written to {filename}")
+        print(f"Embedding successfully written to {filename.name}.pt")
     except Exception as e:
         print(f"An error occurred while writing the embedding to file: {e}")
 
@@ -143,7 +143,7 @@ def main():
     extract_and_save(
         model,
         loader,
-        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        torch.device("cuda"),
         args.dest_file,
         args.batch_size,
     )
