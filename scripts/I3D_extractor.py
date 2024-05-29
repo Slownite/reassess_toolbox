@@ -11,7 +11,7 @@ import pathlib
 class I3DDatasetRGB(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, list(path.glob("**/rgb_*.mp4"))))
+        self.data = VideoStreamer(str(path))
 
     def __len__(self):
         return len(self.data) // self.block
@@ -23,7 +23,7 @@ class I3DDatasetRGB(Dataset):
             raise IndexError(f"index: {index} is out bound!")
         i = index * self.block
         j = i + self.block
-        rgb_frames, files = self.data[i:j]
+        rgb_frames = self.data[i:j]
         if rgb_frames.shape[0] < 66:
             rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
@@ -33,13 +33,13 @@ class I3DDatasetRGB(Dataset):
             3,
         ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224, 3) "
         rgb_frames = torch.Tensor(rgb_frames).permute(3, 0, 1, 2)
-        return (rgb_frames, files)
+        return rgb_frames
 
 
 class I3DDatasetOF(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, (path.glob("**/flow_*.mp4"))))
+        self.data = VideoStreamer(str(path))
 
     def __len__(self):
         return len(self.data)
@@ -51,7 +51,7 @@ class I3DDatasetOF(Dataset):
             raise IndexError(f"index: {index} is out bound!")
         i = index * self.block
         j = i + self.block
-        compressed_flows, files = self.data[i:j]
+        compressed_flows = self.data[i:j]
         if compressed_flows.shape[0] < 66:
             compressed_flows = pad_to_shape(compressed_flows, (66, 224, 224, 3))
         assert compressed_flows.shape == (
@@ -67,16 +67,16 @@ class I3DDatasetOF(Dataset):
         stack_flows = uncompressed_flow.reshape(
             uf_depth * uf_vectors, uf_width, uf_width
         )
-        return stack_flows, files
+        return stack_flows
 
 
 def init(args) -> [I3D, Dataset]:
     if args.model == "rgb":
         model = I3D(in_channels=3)
-        dataset = I3DDatasetRGB(args.source_dir, block=args.window_size)
+        dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
     elif args.model == "of":
         model = I3D(in_channels=2)
-        dataset = I3DDatasetRGB(args.source_dir, block=args.window_size)
+        dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
     else:
         raise ValueError("model type should be rgb or of")
     return model, dataset
@@ -103,7 +103,7 @@ def extract_and_save(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
-    directory: pathlib.Path,
+    filename: pathlib.Path,
     batch_size: int,
 ):
     """
@@ -118,42 +118,35 @@ def extract_and_save(
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for data, files in loader:
-            data = data.to(device)
-            print("I3D extraction")
+        for data in loader:
+            data = data.to(device, non_blocking=True)
             embeddings = model.extract(data)
-            print("I3D extraction done")
-            write_embedding_to_file_in_chunks(embeddings.cpu(), directory / files[0])
-            print("writing")
+            write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
 
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("source_dir", type=pathlib.Path)
-    parser.add_argument("dest_dir", type=pathlib.Path)
+    parser.add_argument("source_file", type=pathlib.Path)
+    parser.add_argument("dest_file", type=pathlib.Path)
     parser.add_argument("-w", "--window_size", type=int, default=66)
     parser.add_argument("-b", "--batch_size", type=int, default=256)
     parser.add_argument("-m", "--model", type=str, default="rgb")
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
     args = parser.parse_args()
     model, dataset = init(args)
-    print("Initialization done")
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=True,
     )
-    print("Loader created")
-    print("start extracting")
     extract_and_save(
         model,
         loader,
         torch.device("cuda"),
-        args.dest_dir,
+        args.dest_file,
         args.batch_size,
     )
-    print("Done")
 
 
 if __name__ == "__main__":
