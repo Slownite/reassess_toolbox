@@ -434,7 +434,7 @@ class InceptionI3d(nn.Module):
 
 class I3D(nn.Module):
     def __init__(
-        self, num_classes: int = 2, in_channels=3, final_endpoint="logits"
+        self, num_classes: int = 2, in_channels=3, final_endpoint="Logits"
     ) -> None:
         super().__init__()
         self.core = InceptionI3d(in_channels=in_channels, final_endpoint=final_endpoint)
