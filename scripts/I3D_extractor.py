@@ -73,10 +73,10 @@ class I3DDatasetOF(Dataset):
 def init(args) -> [I3D, Dataset]:
     if args.model == "rgb":
         model = I3D(in_channels=3)
-        dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
+        dataset = I3DDatasetRGB(args.source_dir, block=args.window_size)
     elif args.model == "of":
         model = I3D(in_channels=2)
-        dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
+        dataset = I3DDatasetRGB(args.source_dir, block=args.window_size)
     else:
         raise ValueError("model type should be rgb or of")
     return model, dataset
@@ -147,7 +147,7 @@ def main():
         model,
         loader,
         torch.device("cuda"),
-        args.dest_file,
+        args.dest_dir,
         args.batch_size,
     )
     print("Done")
