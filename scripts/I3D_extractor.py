@@ -26,7 +26,6 @@ class I3DDatasetRGB(Dataset):
         j = i + self.block
         rgb_frames = self.data[i:j]
         print(rgb_frames.shape)
-        print(rgb_frames)
         assert rgb_frames.shape == (
             self.block,
             224,
