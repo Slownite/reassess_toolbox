@@ -88,13 +88,13 @@ def write_embedding_to_file_in_chunks(embedding, filename):
 
     Args:
     embedding_generator torch tensor: A torch tensor that contains chunks of the embedding vector.
-    filename (str): The name of the file to write the embedding to.
+    filename (pathlib.Path): The name of the file to write the embedding to.
     """
     try:
         # Open the file in write mode
         with open(filename, "ab") as file:
             torch.save(embedding, file)
-        print(f"Embedding successfully written to {filename.name}.pt")
+        print(f"Embedding successfully written to {filename.stem}.pt")
     except Exception as e:
         print(f"An error occurred while writing the embedding to file: {e}")
 
@@ -103,7 +103,7 @@ def extract_and_save(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
-    filename: str,
+    filename: pathlib.Path,
     batch_size: int,
 ):
     """
@@ -113,7 +113,7 @@ def extract_and_save(
     model (nn.Module): The model used to extract embeddings.
     loader (DataLoader): The data loader providing input data.
     device (torch.device): The device to run the model on.
-    filename (str): The name of the file to write the embeddings to.
+    filename (Path): The name of the file to write the embeddings to.
     """
     model.to(device)
     model.eval()
