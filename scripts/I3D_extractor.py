@@ -25,7 +25,6 @@ class I3DDatasetRGB(Dataset):
         i = index * self.block
         j = i + self.block
         rgb_frames = self.data[i:j]
-        print(rgb_frames.shape)
         assert rgb_frames.shape == (
             self.block,
             224,
@@ -49,7 +48,9 @@ class I3DDatasetOF(Dataset):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
-        compressed_flows = self.data[index]
+        i = index * self.block
+        j = i + self.block
+        compressed_flows = self.data[i:j]
         assert compressed_flows.shape == (
             self.block,
             224,
@@ -135,6 +136,7 @@ def main():
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=True,
+        drop_last=True,
     )
     extract_and_save(
         model,
