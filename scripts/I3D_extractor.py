@@ -6,6 +6,7 @@ from torch import nn
 from utils import VideoStreamer, pad_to_shape
 from argparse import ArgumentParser
 import pathlib
+from tqdm.auto import tqdm
 
 
 class I3DDatasetRGB(Dataset):
@@ -118,7 +119,7 @@ def extract_and_save(
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for data in loader:
+        for data in tqdm(loader, total=loader.dataset // batch_size):
             data = data.to(device, non_blocking=True)
             embeddings = model.extract(data)
             write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
