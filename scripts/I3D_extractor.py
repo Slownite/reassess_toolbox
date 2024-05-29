@@ -4,14 +4,14 @@ from ..modules import I3D
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
 from ..utils import VideoStreamer
+from argparse import ArgumentParser
+from tqdm.auto import tqdm
+
 
 class I3DDatasetRGB(Dataset):
-    def __init__(
-        self, path: pathlib.Path, block=66
-    ) -> None:
-        rgb = list(path.glob("**/rgb_*.mp4"))
+    def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, rgb), batch=block)
+        self.data = VideoStreamer(*map(str, path), batch=block)
 
     def __len__(self):
         return self.size
@@ -29,13 +29,11 @@ class I3DDatasetRGB(Dataset):
         ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224) "
         return rgb_frames
 
+
 class I3DDatasetOF(Dataset):
-    def __init__(
-        self, path: pathlib.Path, block=66
-    ) -> None:
-        of = list(path.glob("**/flow_*.mp4"))
+    def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, flow), batch=block)
+        self.data = VideoStreamer(*map(str, path), batch=block)
 
     def __len__(self):
         return self.size
@@ -60,17 +58,84 @@ class I3DDatasetOF(Dataset):
         )
         return stack_flows
 
-def init(args)->[I3D, Dataset]:
+
+def init(args) -> [I3D, Dataset]:
     if args.model == "rgb":
-        model = I3D(num_classes = args.target, in_channels=3)
-        dataset = I3DDatasetRGB(args.source_directory, block=window_size)
-    elif args.modle == "of":
-        model = I3D(num_classes = args.target, in_channels=2)
-        dataset = I3DDatasetRGB(args.source_directory, block=window_size)
+        model = I3D(in_channels=3)
+        dataset = I3DDatasetRGB(args.source_file, block=window_size)
+    elif args.model == "of":
+        model = I3D(in_channels=2)
+        dataset = I3DDatasetRGB(args.source_file, block=window_size)
     else:
         raise ValueError("model type should be rgb or of")
     return model, dataset
 
-def extract(model:nn.Module,
+
+def write_embedding_to_file_in_chunks(embedding, filename):
+    """
+    Writes an embedding vector to a file in chunks.
+
+    Args:
+    embedding_generator torch tensor: A torch tensor that contains chunks of the embedding vector.
+    filename (str): The name of the file to write the embedding to.
+    """
+    try:
+        # Open the file in write mode
+        with open(filename, "ab") as file:
+            torch.save(embedding, file)
+        print(f"Embedding successfully written to {filename}")
+    except Exception as e:
+        print(f"An error occurred while writing the embedding to file: {e}")
+
+
+def extract_and_save(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    filename: str,
+    batch_size: int,
+):
+    """
+    Extracts embeddings from the model using data from the loader and saves them to a file.
+
+    Args:
+    model (nn.Module): The model used to extract embeddings.
+    loader (DataLoader): The data loader providing input data.
+    device (torch.device): The device to run the model on.
+    filename (str): The name of the file to write the embeddings to.
+    """
+    model.to(device)
+    model.eval()
+    with torch.no_grad():
+        for data in loader:
+            data = data.to(device, non_blocking=True)
+            embeddings = model(data)
+            write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
+
+
 def main():
-    pass
+    parser = ArgumentParser()
+    parser.add_argument("source_file", type=pathlib.Path)
+    parser.add_argument("dest_file", type=pathlib.Path)
+    parser.add_argument("dest_file", type=pathlib.Path)
+    parser.add_argument("-w", "--window_size", type=int, default=66)
+    parser.add_argument("-b", "--batch_size", type=int, default=256)
+    parser.add_argument("-m", "--model", type=str, default="rgb")
+    parser.add_argument("-nw", "--num_workers", type=int, default=0)
+    args = parser.parse_args()
+    model, dataset = init(args)
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        pîn_memory=True,
+    )
+    extract_and_save(
+        model,
+        loader,
+        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    )
+
+
+if __name__ == "__main__":
+    main()
