@@ -12,7 +12,7 @@ import pathlib
 class I3DDatasetRGB(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(str(path), batch=block)
+        self.data = VideoStreamer(str(path))
 
     def __len__(self):
         return len(self.data)
@@ -22,7 +22,9 @@ class I3DDatasetRGB(Dataset):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
-        rgb_frames = self.data[index]
+        i = i * self.block
+        j = i + self.block
+        rgb_frames = self.data[i:j]
         print(rgb_frames)
         assert rgb_frames.shape == (
             self.block,
@@ -37,7 +39,7 @@ class I3DDatasetRGB(Dataset):
 class I3DDatasetOF(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(str(path), batch=block)
+        self.data = VideoStreamer(str(path))
 
     def __len__(self):
         return len(self.data)
