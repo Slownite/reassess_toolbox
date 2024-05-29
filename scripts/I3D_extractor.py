@@ -128,7 +128,7 @@ def main():
         dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
-        pîn_memory=True,
+        pin_memory=True,
     )
     extract_and_save(
         model,
