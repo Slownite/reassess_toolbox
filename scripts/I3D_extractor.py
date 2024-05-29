@@ -120,9 +120,8 @@ def extract_and_save(
     model.to(device)
     model.eval()
     with torch.no_grad():
-        for data in tqdm(loader, total=len(loader.dataset)):
+        for data in tqdm(loader, total=len(loader.dataset) // batch_size):
             data = data.to(device, non_blocking=True)
-            print(data.shape)
             embeddings = model.extract(data)
             write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
 
