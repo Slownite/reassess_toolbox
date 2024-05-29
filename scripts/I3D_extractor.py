@@ -16,7 +16,7 @@ class I3DDatasetRGB(Dataset):
         print(self.__len__())
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) // self.block
 
     def __getitem__(
         self, index: int
