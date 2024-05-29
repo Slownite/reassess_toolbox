@@ -119,7 +119,7 @@ def extract_and_save(
     model.eval()
     with torch.no_grad():
         for data, files in loader:
-            data = data.to(device, non_blocking=True)
+            data = data.to(device)
             print("I3D extraction")
             embeddings = model.extract(data)
             print("I3D extraction done")
