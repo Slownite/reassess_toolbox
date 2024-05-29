@@ -56,5 +56,5 @@ for SOURCE_FILE in "$SOURCE_DIR"/*; do
   DEST_FILE="$DEST_DIR/$FILE_NAME"
 
   # Apply the I3D_extractor.py script to the source file and save to the destination file
-  python -m scripts.I3D_extractor -w $WINDOW_SIZE -b $BATCH_SIZE -m $MODEL -nw $NUM_WORKERS "$SOURCE_FILE" "$DEST_FILE"
+  python -m scripts.I3D_extractor "$SOURCE_FILE" "$DEST_FILE" -w $WINDOW_SIZE -b $BATCH_SIZE -m $MODEL -nw $NUM_WORKERS
 done

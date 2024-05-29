@@ -12,7 +12,6 @@ class I3DDatasetRGB(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
         self.data = VideoStreamer(str(path))
-        print(self.__len__())
 
     def __len__(self):
         return len(self.data) // self.block
