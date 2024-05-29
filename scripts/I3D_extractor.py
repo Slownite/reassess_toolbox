@@ -118,7 +118,6 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("source_file", type=pathlib.Path)
     parser.add_argument("dest_file", type=pathlib.Path)
-    parser.add_argument("dest_file", type=pathlib.Path)
     parser.add_argument("-w", "--window_size", type=int, default=66)
     parser.add_argument("-b", "--batch_size", type=int, default=256)
     parser.add_argument("-m", "--model", type=str, default="rgb")
@@ -135,6 +134,8 @@ def main():
         model,
         loader,
         torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        dest_file,
+        batch_size,
     )
 
 
