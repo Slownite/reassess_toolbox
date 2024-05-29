@@ -15,7 +15,7 @@ class I3DDatasetRGB(Dataset):
         self.data = VideoStreamer(str(path), batch=block)
 
     def __len__(self):
-        return self.size
+        return len(self.data)
 
     def __getitem__(
         self, index: int
@@ -37,7 +37,7 @@ class I3DDatasetOF(Dataset):
         self.data = VideoStreamer(str(path), batch=block)
 
     def __len__(self):
-        return self.size
+        return len(self.data)
 
     def __getitem__(
         self, index: int
