@@ -22,9 +22,7 @@ class I3DDatasetRGB(Dataset):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
-        i = index * self.block
-        j = i + self.block
-        rgb_frames = self.data[i:j]
+        rgb_frames = self.data[i]
         assert rgb_frames.shape == (
             self.block,
             224,
