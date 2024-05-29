@@ -25,7 +25,7 @@ class I3DDatasetRGB(Dataset):
         i = index * self.block
         j = i + self.block
         rgb_frames = self.data[i:j]
-        print(rgb_frames)
+        print(rgb_frames.shape)
         if rgb_frames.shape[0] < 66:
             rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
