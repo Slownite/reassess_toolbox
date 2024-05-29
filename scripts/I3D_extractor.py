@@ -134,8 +134,8 @@ def main():
         model,
         loader,
         torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        dest_file,
-        batch_size,
+        args.dest_file,
+        args.batch_size,
     )
 
 
