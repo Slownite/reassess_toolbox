@@ -123,7 +123,7 @@ def extract_and_save(
         for data in tqdm(loader, total=len(loader.dataset)):
             data = data.to(device, non_blocking=True)
             print(data.shape)
-            embeddings = model(data)
+            embeddings = model.extract(data)
             write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
 
 

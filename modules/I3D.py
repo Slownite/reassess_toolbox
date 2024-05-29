@@ -455,7 +455,7 @@ class I3D(nn.Module):
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         embedding_vector = self.core.extract_features(X)
-        x = self.logits(self.dropout(embedding_vector))
+        x = self.logits(self.core.dropout(embedding_vector))
         if self.core._spatial_squeeze:
             logits = x.squeeze(3).squeeze(3)
         # logits is batch X time X classes, which is what we want to work with
