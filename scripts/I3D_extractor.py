@@ -25,7 +25,6 @@ class I3DDatasetRGB(Dataset):
         i = index * self.block
         j = i + self.block
         rgb_frames = self.data[i:j]
-        print(rgb_frames.shape)
         if rgb_frames.shape[0] < 66:
             rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
@@ -34,6 +33,7 @@ class I3DDatasetRGB(Dataset):
             224,
             3,
         ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224, 3) "
+        print(rgb_frames.shape)
         rgb_frames = torch.Tensor(rgb_frames).permute(3, 0, 1, 2)
         return rgb_frames
 
