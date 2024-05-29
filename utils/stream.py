@@ -93,7 +93,7 @@ class VideoCaptureWrapper:
 
 def add_video_capture(
     paths: tuple[str, ...], videos: list[Any], cumul_length: list[int], shape=None
-) -> tuple[list[Any], list[int], list[str]]:
+) -> tuple[list[Any], list[int]]:
     """
     Add video capture objects to the list of videos.
 
@@ -106,15 +106,13 @@ def add_video_capture(
     Returns:
         tuple[list[Any], list[int]]: The updated list of videos and cumulative length.
     """
-    files = []
     for _, file in enumerate(paths):
         vid = VideoCaptureWrapper(file, shape=shape)
         num_frames = int(len(vid))
         new_cumul_length = cumul_length[-1] + num_frames
         videos.append(vid)
         cumul_length.append(new_cumul_length)
-        files.append(file)
-    return videos, cumul_length, files
+    return videos, cumul_length
 
 
 class VideoStreamer:
@@ -134,9 +132,7 @@ class VideoStreamer:
         """
         self.batch = batch
         self.shape = shape
-        self.videos, self.cumul_length, self.files = add_video_capture(
-            paths, [], [0], self.shape
-        )
+        self.videos, self.cumul_length = add_video_capture(paths, [], [0], self.shape)
 
     def append(self, *paths: tuple[str, ...]):
         """
@@ -172,14 +168,7 @@ class VideoStreamer:
         """
         if isinstance(value, slice):
             start, stop, step = value.indices(len(self))
-            array = []
-            files = []
-            for i in range(start, stop, step):
-                item, file = self.get_item(i)
-                array.append(item)
-                files.append(file)
-            return np.array(array), files
-
+            return np.array([self.get_item(i) for i in range(start, stop, step)])
         elif isinstance(value, int):
             if value >= len(self) or value < 0:
                 raise IndexError("Index out of bounds")
@@ -198,7 +187,7 @@ class VideoStreamer:
             np.ndarray: The frame from the video stream.
         """
         video_index, index = get_position(value, self.cumul_length)
-        return self.videos[video_index - 1][index], self.files[video_index - 1]
+        return self.videos[video_index - 1][index]
 
 
 if __name__ == "__main__":
