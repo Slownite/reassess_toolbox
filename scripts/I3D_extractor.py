@@ -92,7 +92,7 @@ def write_embedding_to_file_in_chunks(embedding, filename):
     """
     try:
         # Open the file in write mode
-        with open(filename, "ab") as file:
+        with open(filename.parent / f"{filename.stem.pt}", "ab") as file:
             torch.save(embedding, file)
         print(f"Embedding successfully written to {filename.stem}.pt")
     except Exception as e:
