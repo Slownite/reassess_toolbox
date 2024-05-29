@@ -120,8 +120,11 @@ def extract_and_save(
     with torch.no_grad():
         for data, files in loader:
             data = data.to(device, non_blocking=True)
+            print("I3D extraction")
             embeddings = model.extract(data)
+            print("I3D extraction done")
             write_embedding_to_file_in_chunks(embeddings.cpu(), directory / files[0])
+            print("writing")
 
 
 def main():
