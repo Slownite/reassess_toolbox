@@ -31,6 +31,7 @@ class I3DDatasetRGB(Dataset):
             224,
             3,
         ), f"rgb_frames shape is {rgb_frames.shape}, should be ({self.block}, 224, 224, 3) "
+        print(rgb_frames.shape)
         rgb_frames = torch.Tensor(rgb_frames).permute(3, 0, 1, 2)
         return rgb_frames
 
