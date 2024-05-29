@@ -11,7 +11,7 @@ import pathlib
 class I3DDatasetRGB(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, path.glob("**/rgb_*.mp4")))
+        self.data = VideoStreamer(*map(str, list(path.glob("**/rgb_*.mp4"))))
 
     def __len__(self):
         return len(self.data) // self.block
@@ -39,7 +39,7 @@ class I3DDatasetRGB(Dataset):
 class I3DDatasetOF(Dataset):
     def __init__(self, path: pathlib.Path, block=66) -> None:
         self.block = block
-        self.data = VideoStreamer(*map(str, path.glob("**/flow_*.mp4")))
+        self.data = VideoStreamer(*map(str, (path.glob("**/flow_*.mp4"))))
 
     def __len__(self):
         return len(self.data)
@@ -103,7 +103,7 @@ def extract_and_save(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
-    filename: pathlib.Path,
+    directory: pathlib.Path,
     batch_size: int,
 ):
     """
@@ -121,25 +121,28 @@ def extract_and_save(
         for data, files in loader:
             data = data.to(device, non_blocking=True)
             embeddings = model.extract(data)
-            write_embedding_to_file_in_chunks(embeddings.cpu(), pathlib.Path(files[0]))
+            write_embedding_to_file_in_chunks(embeddings.cpu(), directory / files[0])
 
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("source_file", type=pathlib.Path)
-    parser.add_argument("dest_file", type=pathlib.Path)
+    parser.add_argument("source_dir", type=pathlib.Path)
+    parser.add_argument("dest_dir", type=pathlib.Path)
     parser.add_argument("-w", "--window_size", type=int, default=66)
     parser.add_argument("-b", "--batch_size", type=int, default=256)
     parser.add_argument("-m", "--model", type=str, default="rgb")
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
     args = parser.parse_args()
     model, dataset = init(args)
+    print("Initialization done")
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=True,
     )
+    print("Loader created")
+    print("start extracting")
     extract_and_save(
         model,
         loader,
@@ -147,6 +150,7 @@ def main():
         args.dest_file,
         args.batch_size,
     )
+    print("Done")
 
 
 if __name__ == "__main__":
