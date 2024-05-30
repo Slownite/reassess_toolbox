@@ -3,7 +3,7 @@ import torch
 from modules import I3D
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
-from utils import VideoStreamer, pad_to_shape
+from utils import VideoStreamer, pad_to_shape, videos_frame_to_flow
 from argparse import ArgumentParser
 import pathlib
 from tqdm.auto import tqdm
@@ -59,9 +59,9 @@ class I3DDatasetOF(Dataset):
             self.block,
             224,
             224,
-            2,
-        ), f"compressed_flows shape is {compressed_flow.shape}, should be ({self.block}, 224, 224, 2)"
-        uncompressed_flow = torch.tensor(videos_frame_to_flow(flows)).permute(
+            3,
+        ), f"compressed_flows shape is {compressed_flows.shape}, should be ({self.block}, 224, 224, 3)"
+        uncompressed_flow = torch.tensor(videos_frame_to_flow(compressed_flows)).permute(
             3, 0, 1, 2
         )
         uf_vectors, uf_depth, uf_width, uf_height = uncompressed_flow.shape
@@ -73,11 +73,11 @@ class I3DDatasetOF(Dataset):
 
 def init(args) -> [I3D, Dataset]:
     if args.model == "rgb":
-        model = I3D(in_channels=3)
+        model = I3D(in_channels=3, pretrained_weights=args.weights, final_endpoint=args.layer)
         dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
     elif args.model == "of":
-        model = I3D(in_channels=2)
-        dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
+        model = I3D(in_channels=2, pretrained_weights=args.weights, final_endpoint=args.layer)
+        dataset = I3DDatasetOF(args.source_file, block=args.window_size)
     else:
         raise ValueError("model type should be rgb or of")
     return model, dataset
@@ -139,6 +139,8 @@ def main():
     parser.add_argument("-b", "--batch_size", type=int, default=256)
     parser.add_argument("-m", "--model", type=str, default="rgb")
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
+    parser.add_argument("-l", '--layer', type=str, default="Mixed_5c")
+    parser.add_argument("--weights", default=None, type=pathlib.Path)
     args = parser.parse_args()
     model, dataset = init(args)
     loader = DataLoader(
@@ -150,8 +152,8 @@ def main():
     extract_and_save(
         model,
         loader,
-        torch.device("cuda"),
-        args.dest_file,
+        torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        args.dest_file.parent / f"{args.dest_file.stem}_{args.layer}{args.dest_file.suffix}",
         args.batch_size,
     )
 

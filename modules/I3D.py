@@ -8,6 +8,7 @@ import numpy as np
 import os
 import sys
 from collections import OrderedDict
+import pathlib
 
 
 class MaxPool3dSamePadding(nn.MaxPool3d):
@@ -253,6 +254,8 @@ class InceptionI3d(nn.Module):
         if self._final_endpoint not in self.VALID_ENDPOINTS:
             raise ValueError("Unknown final endpoint %s" % self._final_endpoint)
 
+        self.avg_pool = nn.AvgPool3d(kernel_size=[2, 7, 7], stride=(1, 1, 1))
+        self.dropout = nn.Dropout(dropout_keep_prob)
         self.end_points = {}
         end_point = "Conv3d_1a_7x7"
         self.end_points[end_point] = Unit3D(
@@ -264,6 +267,7 @@ class InceptionI3d(nn.Module):
             name=name + end_point,
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "MaxPool3d_2a_3x3"
@@ -271,6 +275,7 @@ class InceptionI3d(nn.Module):
             kernel_size=[1, 3, 3], stride=(1, 2, 2), padding=0
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Conv3d_2b_1x1"
@@ -282,6 +287,7 @@ class InceptionI3d(nn.Module):
             name=name + end_point,
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Conv3d_2c_3x3"
@@ -293,6 +299,7 @@ class InceptionI3d(nn.Module):
             name=name + end_point,
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "MaxPool3d_3a_3x3"
@@ -300,6 +307,7 @@ class InceptionI3d(nn.Module):
             kernel_size=[1, 3, 3], stride=(1, 2, 2), padding=0
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_3b"
@@ -307,6 +315,7 @@ class InceptionI3d(nn.Module):
             192, [64, 96, 128, 16, 32, 32], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_3c"
@@ -314,6 +323,7 @@ class InceptionI3d(nn.Module):
             256, [128, 128, 192, 32, 96, 64], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "MaxPool3d_4a_3x3"
@@ -321,6 +331,7 @@ class InceptionI3d(nn.Module):
             kernel_size=[3, 3, 3], stride=(2, 2, 2), padding=0
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_4b"
@@ -328,6 +339,7 @@ class InceptionI3d(nn.Module):
             128 + 192 + 96 + 64, [192, 96, 208, 16, 48, 64], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_4c"
@@ -335,6 +347,7 @@ class InceptionI3d(nn.Module):
             192 + 208 + 48 + 64, [160, 112, 224, 24, 64, 64], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_4d"
@@ -342,6 +355,7 @@ class InceptionI3d(nn.Module):
             160 + 224 + 64 + 64, [128, 128, 256, 24, 64, 64], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_4e"
@@ -349,6 +363,7 @@ class InceptionI3d(nn.Module):
             128 + 256 + 64 + 64, [112, 144, 288, 32, 64, 64], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_4f"
@@ -356,6 +371,7 @@ class InceptionI3d(nn.Module):
             112 + 288 + 64 + 64, [256, 160, 320, 32, 128, 128], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "MaxPool3d_5a_2x2"
@@ -363,6 +379,8 @@ class InceptionI3d(nn.Module):
             kernel_size=[2, 2, 2], stride=(2, 2, 2), padding=0
         )
         if self._final_endpoint == end_point:
+            self.build()
+            self.build()
             return
 
         end_point = "Mixed_5b"
@@ -370,6 +388,7 @@ class InceptionI3d(nn.Module):
             256 + 320 + 128 + 128, [256, 160, 320, 32, 128, 128], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Mixed_5c"
@@ -377,11 +396,10 @@ class InceptionI3d(nn.Module):
             256 + 320 + 128 + 128, [384, 192, 384, 48, 128, 128], name + end_point
         )
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = "Logits"
-        self.avg_pool = nn.AvgPool3d(kernel_size=[2, 7, 7], stride=(1, 1, 1))
-        self.dropout = nn.Dropout(dropout_keep_prob)
         self.logits = Unit3D(
             in_channels=384 + 384 + 128 + 128,
             output_channels=self._num_classes,
@@ -434,11 +452,14 @@ class InceptionI3d(nn.Module):
 
 class I3D(nn.Module):
     def __init__(
-        self, num_classes: int = 2, in_channels=3, final_endpoint="Logits"
+            self, num_classes: int = 2, in_channels=3, final_endpoint="Logits", pretrained_weights: pathlib.Path = None
     ) -> None:
         super().__init__()
         self.core = InceptionI3d(in_channels=in_channels, final_endpoint=final_endpoint)
-        self.core.build()
+        if pretrained_weights is not None:
+            full_state_dict = torch.load(str(pretrained_weights))
+            filtered_state_dict = {k: v for k, v in full_state_dict.items() if k in self.core.state_dict()}
+            self.core.load_state_dict(filtered_state_dict, strict=False)
         self.logits = Unit3D(
             in_channels=384 + 384 + 128 + 128,
             output_channels=num_classes,
