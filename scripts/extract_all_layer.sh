@@ -76,7 +76,7 @@ for LAYER in "${LAYERS[@]}"; do
     ./scripts/extractor.sh -w $WINDOW_SIZE -b $BATCH_SIZE -m $MODEL -nw $NUM_WORKERS -l $LAYER --weights "$WEIGHTS" "$SOURCE_DIR" "$DEST_DIR"
 
     if [ $? -ne 0 ]; then
-        echo "Error processing layer: $LAYER" >> "${LAYER}_error_log.txt"
+        echo "Error processing layer: $LAYER" >> "${MODEL}_${LAYER}_error_log.txt"
     fi
 done
 

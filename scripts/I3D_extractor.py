@@ -26,7 +26,7 @@ class I3DDatasetRGB(Dataset):
         j = i + self.block
         rgb_frames = self.data[i:j]
         if rgb_frames.shape[0] < 66:
-            rgb_frame = pad_to_shape(rgb_frames, (66, 224, 224, 3))
+            rgb_frames = pad_to_shape(rgb_frames, (66, 224, 224, 3))
         assert rgb_frames.shape == (
             self.block,
             224,
@@ -43,7 +43,7 @@ class I3DDatasetOF(Dataset):
         self.data = VideoStreamer(str(path))
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) // self.block
 
     def __getitem__(
         self, index: int
@@ -64,10 +64,7 @@ class I3DDatasetOF(Dataset):
         uncompressed_flow = torch.tensor(videos_frame_to_flow(compressed_flows)).permute(
             3, 0, 1, 2
         )
-        uf_vectors, uf_depth, uf_width, uf_height = uncompressed_flow.shape
-        stack_flows = uncompressed_flow.reshape(
-            uf_depth * uf_vectors, uf_width, uf_width
-        )
+        stack_flows = uncompressed_flow
         return stack_flows
 
 

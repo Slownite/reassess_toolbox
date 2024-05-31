@@ -2,11 +2,13 @@
 
 # Default values for optional parameters
 WINDOW_SIZE=66
-BATCH_SIZE=256
+BATCH_SIZE=100
 MODEL="rgb"
 NUM_WORKERS=0
 LAYER="Mixed_5c"
 WEIGHTS=""
+SOURCE_DIR=""
+DEST_DIR=""
 
 # Function to display usage
 usage() {
