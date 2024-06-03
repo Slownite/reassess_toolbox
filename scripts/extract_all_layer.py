@@ -39,7 +39,9 @@ def main():
         print(f"Processing layer: {layer}")
         
         cmd = [
-            './extractor.py',  # Adjust this to the correct path if needed
+            'python',
+            '-m',
+            'scripts.extractor',  # Adjust this to the correct path if needed
             '-w', str(args.window_size),
             '-b', str(args.batch_size),
             '-m', args.model,

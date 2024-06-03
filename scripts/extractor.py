@@ -27,7 +27,7 @@ def main():
         
         # Build the command to run the Python script
         cmd = [
-            'python', '-m', 'scripts.I3D_extractor',
+            'python', '-O', '-m', 'scripts.I3D_extractor',
             source_path, dest_path,
             '-w', str(args.window_size),
             '-b', str(args.batch_size),
