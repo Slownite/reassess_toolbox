@@ -32,7 +32,7 @@ def multiple_annotations_file_to_text(
 ):
     for path in src_path.glob("**/*.EDF"):
         annotations = extract_edf_annotations(path)
-        annotations_to_text(annotations, {dest_path} / f"{output}_{dest_path.stem}")
+        annotations_to_text(annotations, {dest_path} / f"{output}_{dest_path.stem}.txt")
 
 
 def generate_annotations(
