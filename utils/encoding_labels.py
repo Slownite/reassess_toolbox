@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
-
 import numpy as np
+import os
+
+def read_annotations(fd: os.F, window_size: int)-> list:
 
 
 def one_hot_encoding(annotations_schema: dict[str, int], keys: list[str]) -> np.ndarray:
