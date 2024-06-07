@@ -13,7 +13,7 @@ import json
 
 class Embedding(Dataset):
     def __init__(
-            self, path: pathlib.Path, annotations_path; pathlib.Path, annotation_schema_path: pathlib.Path
+            self, path: pathlib.Path, annotations_path: pathlib.Path, annotation_schema_path: pathlib.Path
     ) -> None:
 
 

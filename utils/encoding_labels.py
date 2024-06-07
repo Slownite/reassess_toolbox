@@ -1,7 +1,15 @@
 import numpy as np
-import os
+import torch
+import pathlib
+def read_annotations(file_path: pathlib.Path, window_size: int)-> list:
+    block = []
+    for _ in range(window_size):
+        with open(file_path, "r") as file:
+            block.append(file.readline())
+        yield block
 
-def read_annotations(fd: os.F, window_size: int)-> list:
+def read_embeddings(file_path: pathlib.Path)-> torch.Tensor:
+    with open(file_path, "r") as file:
 
 
 def one_hot_encoding(annotations_schema: dict[str, int], keys: list[str]) -> np.ndarray:
