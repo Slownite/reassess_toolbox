@@ -8,8 +8,8 @@ def read_annotations(file_path: pathlib.Path, window_size: int)-> list:
             block.append(file.readline())
         yield block
 
-def read_embeddings(file_path: pathlib.Path)-> torch.Tensor:
-    with open(file_path, "r") as file:
+# def read_embeddings(file_path: pathlib.Path)-> torch.Tensor:
+#     with open(file_path, "r") as file:
 
 
 def one_hot_encoding(annotations_schema: dict[str, int], keys: list[str]) -> np.ndarray:
