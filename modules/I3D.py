@@ -456,6 +456,7 @@ class I3D(nn.Module):
     ) -> None:
         super().__init__()
         self.core = InceptionI3d(in_channels=in_channels, final_endpoint=final_endpoint)
+        self.core.eval()
         if pretrained_weights is not None:
             full_state_dict = torch.load(str(pretrained_weights))
             filtered_state_dict = {k: v for k, v in full_state_dict.items() if k in self.core.state_dict()}
