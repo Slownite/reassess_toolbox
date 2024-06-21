@@ -6,6 +6,7 @@ from utils import (
     one_hot_encoding,
 )
 import json
+
 class Embedding(Dataset):
     def __init__(
             self, path: pathlib.Path, annotation_schema_path: pathlib.Path

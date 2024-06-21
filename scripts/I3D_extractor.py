@@ -7,6 +7,7 @@ from utils import VideoStreamer, pad_to_shape, videos_frame_to_flow
 from argparse import ArgumentParser
 import pathlib
 from tqdm.auto import tqdm
+from npy_append_array import NpyAppendArray
 
 
 class I3DDatasetRGB(Dataset):
@@ -85,14 +86,14 @@ def write_embedding_to_file_in_chunks(embedding, filename):
     Writes an embedding vector to a file in chunks.
 
     Args:
-    embedding_generator torch tensor: A torch tensor that contains chunks of the embedding vector.
+    embedding_generator numpy array: A torch tensor that contains chunks of the embedding vector.
     filename (pathlib.Path): The name of the file to write the embedding to.
     """
     try:
         # Open the file in write mode
-        with open(filename.parent / f"{filename.stem}.pt", "ab") as file:
-            torch.save(embedding, file)
-        print(f"Embedding successfully written to {filename.stem}.pt")
+        with NpyAppendArray(filename, delete_if_exists=True) as npaa:
+            npaa.append(embedding)
+        print(f"Embedding successfully written to {filename.stem}.")
     except Exception as e:
         print(f"An error occurred while writing the embedding to file: {e}")
 
@@ -124,7 +125,7 @@ def extract_and_save(
             embeddings = model.extract(data)
             print("finish extract")
             print("write to file")
-            write_embedding_to_file_in_chunks(embeddings.cpu(), filename)
+            write_embedding_to_file_in_chunks(embeddings.cpu().numpy(), filename)
             print("finish writing to file")
 
 

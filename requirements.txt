@@ -24,6 +24,7 @@ moviepy==1.0.3
 mpmath==1.3.0
 msgpack==1.0.8
 networkx==3.3
+npy-append-array==0.9.16
 numba==0.59.1
 numpy==1.26.4
 nvidia-cublas-cu12==12.1.3.1
