@@ -17,13 +17,13 @@ def main():
     args = parse_arguments()
     
     layers = [
-        "Mixed_4b",
-        "Mixed_4c",
-        "Mixed_4d",
-        "Mixed_4e",
-        "Mixed_4f",
-        "MaxPool3d_5a_2x2",
-        "Mixed_5b",
+        # "Mixed_4b",
+        # "Mixed_4c",
+        # "Mixed_4d",
+        # "Mixed_4e",
+        # "Mixed_4f",
+        # "MaxPool3d_5a_2x2",
+        # "Mixed_5b",
         "Mixed_5c"
     ]
 
