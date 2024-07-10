@@ -1,1 +1,1 @@
-from .I3D_dataset import *
+from .I3D_dataset import I3D_embeddings

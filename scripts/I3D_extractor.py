@@ -11,7 +11,7 @@ from npy_append_array import NpyAppendArray
 
 
 class I3DDatasetRGB(Dataset):
-    def __init__(self, path: pathlib.Path, block=66) -> None:
+    def __init__(self, path: pathlib.Path, block=64) -> None:
         self.block = block
         self.data = VideoStreamer(str(path))
 
@@ -26,8 +26,8 @@ class I3DDatasetRGB(Dataset):
         i = index * self.block
         j = i + self.block
         rgb_frames = self.data[i:j]
-        if rgb_frames.shape[0] < 66:
-            rgb_frames = pad_to_shape(rgb_frames, (66, 224, 224, 3))
+        if rgb_frames.shape[0] < 64:
+            rgb_frames = pad_to_shape(rgb_frames, (64, 224, 224, 3))
         assert rgb_frames.shape == (
             self.block,
             224,
@@ -39,7 +39,7 @@ class I3DDatasetRGB(Dataset):
 
 
 class I3DDatasetOF(Dataset):
-    def __init__(self, path: pathlib.Path, block=66) -> None:
+    def __init__(self, path: pathlib.Path, block=64) -> None:
         self.block = block
         self.data = VideoStreamer(str(path))
 
@@ -54,8 +54,8 @@ class I3DDatasetOF(Dataset):
         i = index * self.block
         j = i + self.block
         compressed_flows = self.data[i:j]
-        if compressed_flows.shape[0] < 66:
-            compressed_flows = pad_to_shape(compressed_flows, (66, 224, 224, 3))
+        if compressed_flows.shape[0] < 64:
+            compressed_flows = pad_to_shape(compressed_flows, (64, 224, 224, 3))
         assert compressed_flows.shape == (
             self.block,
             224,
@@ -133,7 +133,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("source_file", type=pathlib.Path)
     parser.add_argument("dest_file", type=pathlib.Path)
-    parser.add_argument("-w", "--window_size", type=int, default=66)
+    parser.add_argument("-w", "--window_size", type=int, default=64)
     parser.add_argument("-b", "--batch_size", type=int, default=256)
     parser.add_argument("-m", "--model", type=str, default="rgb")
     parser.add_argument("-nw", "--num_workers", type=int, default=0)
