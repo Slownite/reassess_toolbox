@@ -1,9 +1,19 @@
 from torch import nn
 import torch
+from .I3D import Unit3D
+class I3D_head(nn.Module):
+    def __init__(self, num_classes: int = 2):
+        super().__init__()
 
-class STV(nn.Module):
-    def __init__(self, rgb_embed_dim, flow_emded_dim, n_present_heads=1, n_temporal_heads=1):
-        super().__init__(self)
-        self.present_heads = nn.MultiheadAttention(rgb_embed_dim + flow_emded_dim, n_present_heads, dropout=0.5)
-        self.temporal_heads = nn.MultiHeadAttention(r)
-        
+        self.model = Unit3D(
+            in_channels=384 + 384 + 128 + 128,
+            output_channels=num_classes,
+            kernel_shape=[1, 1, 1],
+            padding=0,
+            activation_fn=None,
+            use_batch_norm=False,
+            use_bias=True,
+            name="logits",
+        )
+    def forward(self, X: torch.Tensor)->torch.Tensor:
+        return self.model(X)
