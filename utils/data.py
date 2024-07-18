@@ -8,7 +8,8 @@ def process_annotation_text_file(path: pathlib.Path, schema: dict[str, int], met
         with open(path, 'r') as file:
             annotations = file.readlines()
         numerical_annotations = [schema.get(annotation.rstrip()) or 0 for annotation in annotations]
-        return [method_on_chunk(chunk) for chunk in chunked(numerical_annotations, window_size)]
+        reduce_annotations = [method_on_chunk(chunk) for chunk in chunked(numerical_annotations, window_size)]
+        return reduce_annotations
 
 def downsample(dataset: Dataset, seed: int = 0)->Subset:
     random.seed(seed)
@@ -20,7 +21,8 @@ def downsample(dataset: Dataset, seed: int = 0)->Subset:
         else:
             samples[label] = [i]
     min_class = min(samples, key=lambda k: len(samples[k]))
+    min_size_class = len(samples[min_class])
     samples = {k: random.sample(v, len(v)) for k, v in samples.items()}
-    class_indices = list(flatten([v[:min_class] for k, v in samples.items()]))
+    class_indices = list(flatten([v[:min_size_class] for k, v in samples.items()]))
     subset = Subset(dataset, class_indices)
     return subset

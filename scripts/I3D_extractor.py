@@ -91,7 +91,7 @@ def write_embedding_to_file_in_chunks(embedding, filename):
     """
     try:
         # Open the file in write mode
-        with NpyAppendArray(filename, delete_if_exists=True) as npaa:
+        with NpyAppendArray(filename) as npaa:
             npaa.append(embedding)
         print(f"Embedding successfully written to {filename.stem}.")
     except Exception as e:
