@@ -39,9 +39,7 @@ class I3D_embeddings(Dataset):
         rgb_list = [np.load(npy_path) for npy_path in rgb_npy_files]
         flow_list = [np.load(npy_path) for npy_path in flow_npy_files]
         rgb_tensors = torch.tensor(np.concatenate(rgb_list, axis=0)).squeeze()
-        print("rgb_tensors.shape:", rgb_tensors.shape)
         flow_tensors = torch.tensor(np.concatenate(flow_list, axis=0)).squeeze()
-        print("flow_tensors.shape:", flow_tensors.shape)
         self.rgb_tensors, self.flow_tensors = standardize(rgb_tensors, flow_tensors)
         print([rgb.shape for rgb in rgb_list])
     def __len__(self):
