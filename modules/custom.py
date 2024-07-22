@@ -16,4 +16,4 @@ class I3D_head(nn.Module):
             name="logits",
         )
     def forward(self, X_1: torch.Tensor, X_2: torch.Tensor)->torch.Tensor:
-        return self.model(X_1)
+        return self.model(X_1.unsqueeze(3).unsqueeze(3))
