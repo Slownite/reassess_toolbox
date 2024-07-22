@@ -41,7 +41,6 @@ class I3D_embeddings(Dataset):
         rgb_tensors = torch.tensor(np.concatenate(rgb_list, axis=0)).squeeze()
         flow_tensors = torch.tensor(np.concatenate(flow_list, axis=0)).squeeze()
         self.rgb_tensors, self.flow_tensors = standardize(rgb_tensors, flow_tensors)
-        print([rgb.shape for rgb in rgb_list])
     def __len__(self):
         return len(self.annotations)
 
