@@ -56,5 +56,5 @@ def save_loss(loss_value, file_path):
     loss_value (float): The loss value to be saved.
     file_path (str): The path to the file where the loss values are stored.
     """
-    with open(file_path, 'a') as file:
+    with open(file_path, 'a+') as file:
         file.write(f"{loss_value}\n")
