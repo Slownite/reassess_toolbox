@@ -1,4 +1,5 @@
 from torch import nn
+from torch.nn import functionnal as F
 import torch
 from .I3D import Unit3D
 class I3D_head(nn.Module):
@@ -20,4 +21,4 @@ class I3D_head(nn.Module):
         x = self.adapt_pooling(X_1)
         x = self.model(x)
         logits = x.squeeze(3).squeeze(3)
-        return logits
+        return F.softmax(logits)
