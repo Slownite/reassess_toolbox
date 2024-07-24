@@ -17,6 +17,8 @@ class I3D_head(nn.Module):
             use_bias=True,
             name="logits",
         )
+    def __str__(self):
+        return "I3D_rgb"
     def forward(self, X_1: torch.Tensor, X_2: torch.Tensor)->torch.Tensor:
         x = self.adapt_pooling(X_1)
         x = self.model(x)
