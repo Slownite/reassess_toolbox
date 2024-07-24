@@ -5,6 +5,7 @@ class I3D_head(nn.Module):
     def __init__(self, num_classes: int = 2):
         super().__init__()
 
+        self.adapt_pooling = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.model = Unit3D(
             in_channels=384 + 384 + 128 + 128,
             output_channels=num_classes,
@@ -16,6 +17,7 @@ class I3D_head(nn.Module):
             name="logits",
         )
     def forward(self, X_1: torch.Tensor, X_2: torch.Tensor)->torch.Tensor:
-        x = self.model(X_1)
+        x = self.adapt_pooling(X_1)
+        x = self.model(x)
         logits = x.squeeze(3).squeeze(3)
         return logits
