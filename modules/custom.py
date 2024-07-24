@@ -21,4 +21,4 @@ class I3D_head(nn.Module):
         x = self.adapt_pooling(X_1)
         x = self.model(x)
         logits = x.squeeze(3).squeeze(3)
-        return F.softmax(logits, dim=2)
+        return logits.mean(2)
