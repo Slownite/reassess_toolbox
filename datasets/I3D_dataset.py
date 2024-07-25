@@ -35,7 +35,6 @@ class I3D_embeddings(Dataset):
         flow_npy_files = [f for f in all_files if f.suffix == '.npy' and f.name.startswith("flow_")]
         txt_files = [f for f in all_files if f.suffix == '.txt']
         self.annotations = list(flatten([process_annotation_text_file(path, self.schema, policies[policy]) for path in txt_files]))
-        print("len(self.annotations):", len(self.annotations))
         rgb_list = [np.load(npy_path) for npy_path in rgb_npy_files]
         flow_list = [np.load(npy_path) for npy_path in flow_npy_files]
         rgb_tensors = torch.tensor(np.concatenate(rgb_list, axis=0)).squeeze()
