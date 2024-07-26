@@ -12,8 +12,8 @@ class RGB_I3D_head(nn.Module):
             output_channels=num_classes,
             kernel_shape=[1, 1, 1],
             padding=0,
-            activation_fn=None,
-            use_batch_norm=False,
+            activation_fn=F.relu,
+            use_batch_norm=True,
             use_bias=True,
             name="logits",
         )
@@ -36,8 +36,8 @@ class OF_I3D_head(nn.Module):
             output_channels=num_classes,
             kernel_shape=[1, 1, 1],
             padding=0,
-            activation_fn=None,
-            use_batch_norm=False,
+            activation_fn=F.relu,
+            use_batch_norm=True,
             use_bias=True,
             name="logits",
         )
