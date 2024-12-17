@@ -42,7 +42,8 @@ def read_first_n_frames(video_path: str, n: int = 1):
 
 
 def cropped(boxes, frame):
-
+    if len(boxes.xyxy) == 0:
+        return frame.shape[0], frame.shape[1], 0, 0
     smallest_person = min(
         boxes,
         key=lambda box: (box.xyxy[0][2] - box.xyxy[0]
