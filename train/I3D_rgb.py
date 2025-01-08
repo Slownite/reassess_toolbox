@@ -145,10 +145,10 @@ def test_I3D(dataset_path, annotation_schema_path, model, batch_size=32, input_t
 def main():
     parser = argparse.ArgumentParser(
         description="Train or Test the I3D model.")
-    parser.add_argument(
-        "mode", choices=["train"], help="Mode: train or test.")
     parser.add_argument("--dataset_path", type=pathlib.Path,
                         required=True, help="Path to the dataset.")
+    parser.add_argument("--test_path", required=True,
+                        type=pathlib.Path, help="path to the test set")
     parser.add_argument("--annotation_schema_path", type=str,
                         required=True, help="Path to the annotation schema.")
     parser.add_argument("--model_path", type=str,
@@ -159,31 +159,27 @@ def main():
                         help="Batch size for training/testing.")
     parser.add_argument("--learning_rate", type=float,
                         default=0.001, help="Learning rate for training.")
-    parser.add_argument(
-        "--input_type", choices=["rgb", "flow"], default="rgb", help="Type of input data.")
-
     args = parser.parse_args()
 
     # Load the model
     model = I3D(num_classes=2, pretrained_weights=args.model_path)
 
-    if args.mode == "train":
-        train_I3D(
-            dataset_path=args.dataset_path,
-            annotation_schema_path=args.annotation_schema_path,
-            model=model,
-            num_epochs=args.num_epochs,
-            batch_size=args.batch_size,
-            learning_rate=args.learning_rate,
-            input_type="rgb"
-        )
-        test_I3D(
-            dataset_path=args.dataset_path,
-            annotation_schema_path=args.annotation_schema_path,
-            model=model,
-            batch_size=args.batch_size,
-            input_type="rgb"
-        )
+    train_I3D(
+        dataset_path=args.dataset_path,
+        annotation_schema_path=args.annotation_schema_path,
+        model=model,
+        num_epochs=args.num_epochs,
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+        input_type="rgb"
+    )
+    test_I3D(
+        dataset_path=args.test_path,
+        annotation_schema_path=args.annotation_schema_path,
+        model=model,
+        batch_size=args.batch_size,
+        input_type="rgb"
+    )
 
 
 if __name__ == "__main__":
