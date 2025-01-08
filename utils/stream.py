@@ -30,7 +30,7 @@ class VideoCaptureWrapper:
             filename: The filename of the video.
             shape: The desired shape of the video frames (optional).
         """
-        self.cap = cv.VideoCapture(filename)
+        self.cap = cv.VideoCapture(str(filename))
         self.total_frames = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
         self.shape = shape
 
@@ -132,7 +132,8 @@ class VideoStreamer:
         """
         self.batch = batch
         self.shape = shape
-        self.videos, self.cumul_length = add_video_capture(paths, [], [0], self.shape)
+        self.videos, self.cumul_length = add_video_capture(
+            paths, [], [0], self.shape)
 
     def append(self, *paths: tuple[str, ...]):
         """

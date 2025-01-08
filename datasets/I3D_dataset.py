@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 import pathlib
 import json
-from ..utils import (
+from utils import (
     process_annotation_text_file,
     VideoStreamer,
     videos_frame_to_flow
@@ -44,8 +44,8 @@ class I3D_dataset(Dataset):
         txt_files = [f for f in all_files if f.suffix == '.txt']
         self.annotations = list(flatten([process_annotation_text_file(
             path, self.schema, policies[policy]) for path in txt_files]))
-        self.rgb = VideoStreamer(tuple(rgb_files), batch=64)
-        self.flow = VideoStreamer(tuple(flow_files), batch=64)
+        self.rgb = VideoStreamer(*rgb_files, batch=64)
+        self.flow = VideoStreamer(*flow_files, batch=64)
 
     def __len__(self):
         return len(self.annotations)
