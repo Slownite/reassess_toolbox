@@ -1,7 +1,8 @@
 import numpy as np
-import torch
 import pathlib
-def read_annotations(file_path: pathlib.Path, window_size: int)-> list:
+
+
+def read_annotations(file_path: pathlib.Path, window_size: int) -> list:
     block = []
     for _ in range(window_size):
         with open(file_path, "r") as file:

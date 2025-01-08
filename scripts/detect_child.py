@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 from argparse import ArgumentParser
-import os
+import subprocess
 import pathlib
 import cv2 as cv
 
@@ -44,8 +44,11 @@ def read_first_n_frames(video_path: str, n: int = 1):
 def cropped(boxes, frame):
     if len(boxes.xyxy) == 0:
         return frame.shape[0], frame.shape[1], 0, 0
+    person_detections = [box for box in boxes if box.cls == 0]
+    if person_detections == []:
+        return frame.shape[0], frame.shape[1], 0, 0
     smallest_person = min(
-        boxes,
+        person_detections,
         key=lambda box: (box.xyxy[0][2] - box.xyxy[0]
                          [0]) * (box.xyxy[0][3] - box.xyxy[0][1])
     )
@@ -63,18 +66,30 @@ def cropped(boxes, frame):
     return x_max - x_min, y_max - y_min, x_min, y_min
 
 
-def run_file(filename: pathlib.Path, output_file: pathlib.Path, weights: str, conf=0.5, iou=0.1):
+def run_file(filename: pathlib.Path, output_file: pathlib.Path, weights: str,
+             conf=0.5, iou=0.1, gui=False):
     frame = read_first_n_frames(filename)[0]
     yolo = YOLO(weights)
     result = yolo.predict(frame, conf=conf, iou=iou)
     boxes = result[0].boxes
+    if len(boxes.xyxy) == 0:
+        yolo = YOLO("yolo11x.pt")
+        result = yolo.predict(frame, conf=conf, iou=iou)
+        boxes = result[0].boxes
     width, height, x_min, y_min = cropped(boxes, frame)
-    ffmpeg_command = (
-        f"ffmpeg -y -i {filename} "
-        f"-vf \"crop={width}:{height}:{x_min}:{y_min}\" "
-        f"-c:v libx264 -crf 23 -preset fast {output_file}"
-    )
-    os.system(ffmpeg_command)
+    ffmpeg_command = [
+        "ffmpeg", "-y", "-i", filename,
+        "-vf", f"crop={width}:{height}:{x_min}:{y_min}",
+        "-c:v", "libx264", "-crf", "23", "-preset", "fast", output_file
+    ]
+
+    try:
+        print("Running ffmpeg...")
+        # Run the ffmpeg command
+        subprocess.run(ffmpeg_command, check=True)
+        print("ffmpeg done")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while running ffmpeg: {e}")
 
 
 def main():
@@ -84,13 +99,15 @@ def main():
     parser.add_argument("-w", "--weights", type=str, default="yolo11x")
     parser.add_argument("--conf", type=float, default=0.5)
     parser.add_argument("--iou", type=float, default=0.1)
+    parser.add_argument("--gui", type=bool, default=False)
     args = parser.parse_args()
     if args.src.is_file():
-        run_file(args.src, args.dest, args.weights, args.conf, args.iou)
+        run_file(args.src, args.dest, args.weights,
+                 args.conf, args.iou, args.gui)
     else:
         for video in args.src.glob("*.mp4"):
             run_file(video, args.dest / video.name,
-                     args.weights, args.conf, args.iou)
+                     args.weights, args.conf, args.iou, args.gui)
 
 
 if __name__ == "__main__":
