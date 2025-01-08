@@ -52,8 +52,10 @@ def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_
             # Inputs and labels to device
             # Select rgb or flow
             inputs = inputs[0] if input_type == "rgb" else inputs[1]
+            print("load inputs and label")
             inputs = inputs.to(device)
             labels = labels.to(device)
+            print("done")
 
             # Forward pass
             outputs = model(inputs)  # Model takes either RGB or flow as input
