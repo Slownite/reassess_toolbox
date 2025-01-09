@@ -55,7 +55,8 @@ class I3DDatasetOF(Dataset):
         j = i + self.block
         compressed_flows = self.data[i:j]
         if compressed_flows.shape[0] < 64:
-            compressed_flows = pad_to_shape(compressed_flows, (64, 224, 224, 3))
+            compressed_flows = pad_to_shape(
+                compressed_flows, (64, 224, 224, 3))
         assert compressed_flows.shape == (
             self.block,
             224,
@@ -71,10 +72,12 @@ class I3DDatasetOF(Dataset):
 
 def init(args) -> [I3D, Dataset]:
     if args.model == "rgb":
-        model = I3D(in_channels=3, pretrained_weights=args.weights, final_endpoint=args.layer)
+        model = I3D(in_channels=3, pretrained_weights=args.weights,
+                    final_endpoint=args.layer)
         dataset = I3DDatasetRGB(args.source_file, block=args.window_size)
     elif args.model == "of":
-        model = I3D(in_channels=2, pretrained_weights=args.weights, final_endpoint=args.layer)
+        model = I3D(in_channels=2, pretrained_weights=args.weights,
+                    final_endpoint=args.layer)
         dataset = I3DDatasetOF(args.source_file, block=args.window_size)
     else:
         raise ValueError("model type should be rgb or of")
@@ -119,13 +122,15 @@ def extract_and_save(
     with torch.no_grad():
         for data in tqdm(loader):
             print("load data on gpu")
+            print(data.shape)
             data = data.to(device, non_blocking=True)
             print("end load")
             print("start extract")
             embeddings = model.extract(data)
             print("finish extract")
             print("write to file")
-            write_embedding_to_file_in_chunks(embeddings.cpu().numpy(), filename)
+            write_embedding_to_file_in_chunks(
+                embeddings.cpu().numpy(), filename)
             print("finish writing to file")
 
 
@@ -151,7 +156,8 @@ def main():
         model,
         loader,
         torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        args.dest_file.parent / f"{args.dest_file.stem}_{args.layer}{args.dest_file.suffix}",
+        args.dest_file.parent /
+        f"{args.dest_file.stem}_{args.layer}{args.dest_file.suffix}",
         args.batch_size,
     )
 
