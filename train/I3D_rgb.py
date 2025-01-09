@@ -1,4 +1,4 @@
-from datasets import I3D_dataset
+from datasets import I3D_dataset_rgb
 from modules import I3D
 import pathlib
 import torch
@@ -11,7 +11,7 @@ from tqdm.auto import tqdm
 # Define the training function
 
 
-def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_size=32, learning_rate=0.001, input_type="rgb"):
+def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_size=32, learning_rate=0.001):
     """
     Training function for I3D model.
 
@@ -22,13 +22,10 @@ def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_
     - num_epochs: Number of training epochs
     - batch_size: Size of training batch
     - learning_rate: Learning rate for optimizer
-    - input_type: Type of input ('rgb' or 'flow')
     """
-    if input_type not in ["rgb", "flow"]:
-        raise ValueError("input_type must be 'rgb' or 'flow'")
 
     # Initialize dataset and DataLoader
-    dataset = I3D_dataset(
+    dataset = I3D_dataset_rgb(
         path=dataset_path, annotation_schema_path=annotation_schema_path)
     dataloader = DataLoader(dataset, batch_size=batch_size,
                             shuffle=True, num_workers=4)
@@ -51,7 +48,6 @@ def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_
         for batch_idx, (inputs, labels) in enumerate(tqdm(dataloader, desc=f"Epoch {epoch + 1}/{num_epochs}")):
             # Inputs and labels to device
             # Select rgb or flow
-            inputs = inputs[0] if input_type == "rgb" else inputs[1]
             print("load inputs and label")
             inputs = inputs.to(device)
             labels = labels.to(device)
@@ -83,7 +79,7 @@ def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_
 # Define the testing function
 
 
-def test_I3D(dataset_path, annotation_schema_path, model, batch_size=32, input_type="rgb"):
+def test_I3D(dataset_path, annotation_schema_path, model, batch_size=32):
     """
     Testing function for I3D model.
 
@@ -92,13 +88,10 @@ def test_I3D(dataset_path, annotation_schema_path, model, batch_size=32, input_t
     - annotation_schema_path: Path to the annotation schema
     - model: The PyTorch model (e.g., I3D)
     - batch_size: Size of testing batch
-    - input_type: Type of input ('rgb' or 'flow')
     """
-    if input_type not in ["rgb", "flow"]:
-        raise ValueError("input_type must be 'rgb' or 'flow'")
 
     # Initialize dataset and DataLoader
-    dataset = I3D_dataset(
+    dataset = I3D_dataset_rgb(
         path=dataset_path, annotation_schema_path=annotation_schema_path)
     dataloader = DataLoader(dataset, batch_size=batch_size,
                             shuffle=False, num_workers=4)
@@ -116,7 +109,6 @@ def test_I3D(dataset_path, annotation_schema_path, model, batch_size=32, input_t
         for inputs, labels in tqdm(dataloader, desc="Testing"):
             # Inputs and labels to device
             # Select rgb or flow
-            inputs = inputs[0] if input_type == "rgb" else inputs[1]
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -173,14 +165,12 @@ def main():
         num_epochs=args.num_epochs,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
-        input_type="rgb"
     )
     test_I3D(
         dataset_path=args.test_path,
         annotation_schema_path=args.annotation_schema_path,
         model=model,
         batch_size=args.batch_size,
-        input_type="rgb"
     )
 
 
