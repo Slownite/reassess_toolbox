@@ -124,7 +124,6 @@ def extract_and_save(
     with torch.no_grad():
         for data in tqdm(loader):
             print("load data on gpu")
-            print(data.shape)
             data = data.to(device, non_blocking=True)
             print("end load")
             print("start extract")
