@@ -1,6 +1,6 @@
 
 import argparse
-import os
+from pathlib import Path
 import subprocess
 
 
@@ -16,8 +16,8 @@ def parse_arguments():
                         default=0, help='Number of workers')
     parser.add_argument('-l', '--layer', default='Mixed_5c', help='Layer')
     parser.add_argument('--weights', help='Weights')
-    parser.add_argument('source_dir', help='Source directory')
-    parser.add_argument('dest_dir', help='Destination directory')
+    parser.add_argument('source_dir', type=Path, help='Source directory')
+    parser.add_argument('dest_dir', type=Path, help='Destination directory')
     return parser.parse_args()
 
 
@@ -25,7 +25,7 @@ def main():
     args = parse_arguments()
 
     # Ensure the destination directory exists
-    os.makedirs(args.dest_dir, exist_ok=True)
+    args.dest_dir.mkdir(parents=True, exist_ok=True)
 
     # Set filename prefix based on model
     if args.model == 'rgb':
@@ -36,28 +36,26 @@ def main():
         raise ValueError("Model must be either 'rgb' or 'of'")
 
     # Loop through all files in the source directory
-    for source_file in os.listdir(args.source_dir):
-        if source_file.startswith(file_prefix) and source_file.endswith('.mp4'):
-            source_path = os.path.join(args.source_dir, source_file)
-            dest_path = os.path.join(args.dest_dir, source_file)
+    for source_file in args.source_dir.glob(f"**/{file_prefix}*.mp4"):
+        dest_path = args.dest_dir / source_file.name
 
-            # Build the command to run the Python script
-            cmd = [
-                'python', '-O', '-m', 'scripts.I3D_extractor',
-                source_path, dest_path,
-                '-w', str(args.window_size),
-                '-b', str(args.batch_size),
-                '-m', args.model,
-                '-nw', str(args.num_workers),
-                '-l', args.layer
-            ]
+        # Build the command to run the Python script
+        cmd = [
+            'python', '-O', '-m', 'scripts.I3D_extractor',
+            str(source_file), str(dest_path),
+            '-w', str(args.window_size),
+            '-b', str(args.batch_size),
+            '-m', args.model,
+            '-nw', str(args.num_workers),
+            '-l', args.layer
+        ]
 
-            # Add the --weights parameter if it is specified
-            if args.weights:
-                cmd.extend(['--weights', args.weights])
+        # Add the --weights parameter if it is specified
+        if args.weights:
+            cmd.extend(['--weights', args.weights])
 
-            # Run the command
-            subprocess.run(cmd)
+        # Run the command
+        subprocess.run(cmd)
 
 
 if __name__ == '__main__':
