@@ -75,8 +75,8 @@ def train_I3D(dataset_path, annotation_schema_path, model, num_epochs=10, batch_
         # Epoch results
         epoch_loss = running_loss / len(dataloader)
         epoch_accuracy = correct_predictions / total_predictions
-        print(f"Epoch [{
-              epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}")
+        print(
+            f"Epoch[{epoch + 1}/{num_epochs}], Loss: {epoch_loss: .4f}, Accuracy: {epoch_accuracy: .4f}")
 
     print("Training complete.")
 
