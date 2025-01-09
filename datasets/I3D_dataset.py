@@ -53,8 +53,12 @@ class I3D_dataset(Dataset):
                                                      torch.Tensor], torch.Tensor]:
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
+        print("process flow")
         flow = videos_frame_to_flow(self.flow[index])
+        print("process flow done")
+        print("process rgb")
         rgb = self.rgb[index]
+        print("process done")
         rgb, flow = standardize(rgb, flow)
         return ((rgb, flow), self.annotations[index])
 
