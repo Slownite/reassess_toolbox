@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 import pathlib
 from tqdm.auto import tqdm
 from npy_append_array import NpyAppendArray
+import os
 
 
 class I3DDatasetRGB(Dataset):
@@ -144,6 +145,15 @@ def main():
     parser.add_argument("-l", '--layer', type=str, default="Mixed_5c")
     parser.add_argument("--weights", default=None, type=pathlib.Path)
     args = parser.parse_args()
+
+    result_file = args.dest_file.parent / \
+        f"{args.dest_file.stem}_{args.layer}{args.dest_file.suffix}"
+
+    if result_file.exists():
+        print(f"Result file {
+              result_file} already exists. Skipping computation.")
+        return
+
     model, dataset = init(args)
     loader = DataLoader(
         dataset,
@@ -155,8 +165,7 @@ def main():
         model,
         loader,
         torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        args.dest_file.parent /
-        f"{args.dest_file.stem}_{args.layer}{args.dest_file.suffix}",
+        result_file,
         args.batch_size,
     )
 
