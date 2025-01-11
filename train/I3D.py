@@ -5,7 +5,7 @@ import pathlib
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
 from torch.optim import Optimizer, SGD
-from orch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR
 import torch
 from datasets import I3D_embeddings
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
