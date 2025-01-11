@@ -62,13 +62,14 @@ def train(
 ) -> nn.Module:
     model, dataloader = init(args)
     optimizer = SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
-    loss_fn = nn.CrossEntropyLoss().to(device)
+    loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
     model.train()
     for i in range(n_epochs):
         for batch_number, data in enumerate(dataloader):
             print(f"start batch {batch_number}")
             X, y = data
+            optimizer.zero_grad()
             X_rgb = X[0]
             X_f = X[1]
             X_rgb = X_rgb.to(device).unsqueeze(2).unsqueeze(2)
@@ -77,7 +78,6 @@ def train(
             y_pred = model(X_rgb, X_f)
             loss = loss_fn(y_pred, y)
             print("loss:", loss.item())
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             save_loss(loss.item(), args.path_to_model_save /
