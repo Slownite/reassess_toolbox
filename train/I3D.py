@@ -55,7 +55,8 @@ def init(args) -> tuple[nn.Module, DataLoader, nn.Module]:
     return (model, dataloader)
 
 
-def weighted_loss(y_pred, y_true, sample_weights):
+def weighted_loss(y_pred, y_true):
+    sample_weights = torch.tensor([1.0015, 662.7814])
     loss = nn.CrossEntropyLoss(reduction='none')  # Compute per-sample loss
     per_sample_loss = loss(y_pred, y_true)
     weighted_loss = (per_sample_loss * sample_weights).mean()  # Apply weights
