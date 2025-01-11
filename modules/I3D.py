@@ -80,7 +80,8 @@ class Unit3D(nn.Module):
         )
 
         if self._use_batch_norm:
-            self.bn = nn.BatchNorm3d(self._output_channels, eps=0.001, momentum=0.01)
+            self.bn = nn.BatchNorm3d(
+                self._output_channels, eps=0.001, momentum=0.01)
 
     def compute_pad(self, dim, s):
         if s % self._stride[dim] == 0:
@@ -252,7 +253,8 @@ class InceptionI3d(nn.Module):
         self.logits = None
 
         if self._final_endpoint not in self.VALID_ENDPOINTS:
-            raise ValueError("Unknown final endpoint %s" % self._final_endpoint)
+            raise ValueError("Unknown final endpoint %s" %
+                             self._final_endpoint)
 
         self.avg_pool = nn.AvgPool3d(kernel_size=[2, 7, 7], stride=(1, 1, 1))
         self.dropout = nn.Dropout(dropout_keep_prob)
@@ -368,7 +370,8 @@ class InceptionI3d(nn.Module):
 
         end_point = "Mixed_4f"
         self.end_points[end_point] = InceptionModule(
-            112 + 288 + 64 + 64, [256, 160, 320, 32, 128, 128], name + end_point
+            112 + 288 + 64 + 64, [256, 160, 320,
+                                  32, 128, 128], name + end_point
         )
         if self._final_endpoint == end_point:
             self.build()
@@ -385,7 +388,8 @@ class InceptionI3d(nn.Module):
 
         end_point = "Mixed_5b"
         self.end_points[end_point] = InceptionModule(
-            256 + 320 + 128 + 128, [256, 160, 320, 32, 128, 128], name + end_point
+            256 + 320 + 128 + 128, [256, 160, 320,
+                                    32, 128, 128], name + end_point
         )
         if self._final_endpoint == end_point:
             self.build()
@@ -393,7 +397,8 @@ class InceptionI3d(nn.Module):
 
         end_point = "Mixed_5c"
         self.end_points[end_point] = InceptionModule(
-            256 + 320 + 128 + 128, [384, 192, 384, 48, 128, 128], name + end_point
+            256 + 320 + 128 + 128, [384, 192, 384,
+                                    48, 128, 128], name + end_point
         )
         if self._final_endpoint == end_point:
             self.build()
@@ -455,18 +460,20 @@ class I3D(nn.Module):
             self, num_classes: int = 2, in_channels=3, final_endpoint="Logits", pretrained_weights: pathlib.Path = None
     ) -> None:
         super().__init__()
-        self.core = InceptionI3d(in_channels=in_channels, final_endpoint=final_endpoint)
+        self.core = InceptionI3d(
+            in_channels=in_channels, final_endpoint=final_endpoint)
         self.core.eval()
         if pretrained_weights is not None:
             full_state_dict = torch.load(str(pretrained_weights))
-            filtered_state_dict = {k: v for k, v in full_state_dict.items() if k in self.core.state_dict()}
+            filtered_state_dict = {
+                k: v for k, v in full_state_dict.items() if k in self.core.state_dict()}
             self.core.load_state_dict(filtered_state_dict, strict=False)
         self.logits = Unit3D(
             in_channels=384 + 384 + 128 + 128,
             output_channels=num_classes,
             kernel_shape=[1, 1, 1],
             padding=0,
-            activation_fn=None,
+            activation_fn=F.relu,
             use_batch_norm=False,
             use_bias=True,
             name="logits",
