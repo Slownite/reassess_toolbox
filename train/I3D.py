@@ -72,7 +72,7 @@ def train(
         for batch_number, data in enumerate(dataloader):
             print(f"start batch {batch_number}")
             X, y = data
-            scheduler.zero_grad()
+            optimizer.zero_grad()  # Use optimizer.zero_grad() instead of scheduler.zero_grad()
             X_rgb = X[0]
             X_f = X[1]
             X_rgb = X_rgb.to(device).unsqueeze(2).unsqueeze(2)
@@ -82,10 +82,11 @@ def train(
             loss = loss_fn(y_pred, y)
             print("loss:", loss.item())
             loss.backward()
-            scheduler.step()
+            optimizer.step()  # Perform an optimizer step for each batch
             save_loss(loss.item(), args.path_to_model_save /
                       f"loss_{model}_{args.learning_rate}_{args.epochs}.txt".replace("\n", ""))
             print(f"batch {batch_number} done")
+        scheduler.step()  # Step the scheduler once per epoch
     return model
 
 
