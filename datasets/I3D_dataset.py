@@ -114,7 +114,7 @@ class I3D_embeddings(Dataset):
             rgb_tensors, flow_tensors)
 
     def __len__(self):
-        return len(self.annotations)
+        return len(self.rgb_tensors)
 
     def __getitem__(
         self, index: int
