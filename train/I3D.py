@@ -62,7 +62,8 @@ def train(
 ) -> nn.Module:
     model, dataloader = init(args)
     optimizer = SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
-    loss_fn = nn.CrossEntropyLoss(weight=torch.tensor([1.0015, 662.7814]))
+    loss_fn = nn.CrossEntropyLoss(
+        weight=torch.tensor([1.0015, 662.7814])).to(device)
     model = model.to(device)
     model.train()
     for i in range(n_epochs):
