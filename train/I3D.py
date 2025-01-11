@@ -5,6 +5,7 @@ import pathlib
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
 from torch.optim import Optimizer, SGD
+from orch.optim.lr_scheduler import StepLR
 import torch
 from datasets import I3D_embeddings
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
@@ -62,6 +63,7 @@ def train(
 ) -> nn.Module:
     model, dataloader = init(args)
     optimizer = SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
+    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
     loss_fn = nn.CrossEntropyLoss(
         weight=torch.tensor([1.0015, 662.7814])).to(device)
     model = model.to(device)
@@ -70,7 +72,7 @@ def train(
         for batch_number, data in enumerate(dataloader):
             print(f"start batch {batch_number}")
             X, y = data
-            optimizer.zero_grad()
+            scheduler.zero_grad()
             X_rgb = X[0]
             X_f = X[1]
             X_rgb = X_rgb.to(device).unsqueeze(2).unsqueeze(2)
@@ -80,11 +82,10 @@ def train(
             loss = loss_fn(y_pred, y)
             print("loss:", loss.item())
             loss.backward()
-            optimizer.step()
+            scheduler.step()
             save_loss(loss.item(), args.path_to_model_save /
                       f"loss_{model}_{args.learning_rate}_{args.epochs}.txt".replace("\n", ""))
             print(f"batch {batch_number} done")
-       # _, dataloader = init(args)
     return model
 
 
