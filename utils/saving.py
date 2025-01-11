@@ -4,6 +4,7 @@ import torch.nn as nn
 from pathlib import Path
 import csv
 
+
 def write_dict_to_csv(data_dict, file_path, write_headers=True):
     """
     Writes a dictionary to a CSV file. If the file does not exist, it creates it and writes headers based on the dictionary keys.
@@ -30,6 +31,7 @@ def write_dict_to_csv(data_dict, file_path, write_headers=True):
         # Write the dictionary as one row in the CSV file
         writer.writerow(data_dict)
 
+
 def save_model_weights(model, file_path):
     """
     Save the weights of a PyTorch model to a specified file path using pathlib.
@@ -48,6 +50,7 @@ def save_model_weights(model, file_path):
     torch.save(model.state_dict(), file_path)
     print(f"Model weights saved to {file_path}")
 
+
 def save_loss(loss_value, file_path):
     """
     Appends a given loss value to a specified file.
@@ -56,5 +59,5 @@ def save_loss(loss_value, file_path):
     loss_value (float): The loss value to be saved.
     file_path (str): The path to the file where the loss values are stored.
     """
-    with open(file_path, 'a+') as file:
+    with open(file_path, 'a') as file:
         file.write(f"{loss_value}\n")
