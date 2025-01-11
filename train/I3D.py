@@ -136,18 +136,36 @@ def evaluate(args, model, device) -> None:
     )
     y_predictions = []
     y_true = []
-    for batch_number, data in enumerate(dataloader):
-        print(f"start batch {batch_number}")
-        X, y = data
-        X_rgb = X[0]
-        X_f = X[1]
-        X_rgb = X_rgb.to(device)
-        X_f = X_f.to(device)
-        y_true.append(y.to(device).numpy())
-        y_pred = model(X_rgb, X_f)
-        y_pred = y_pred.argmax(dim=1).detach().cpu().numpy()
-        y_predictions.append(y_pred)
-        print(f"end batch {batch_number}")
+
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():  # Disable gradient computation
+        for batch_number, data in enumerate(dataloader):
+            print(f"start batch {batch_number}")
+            try:
+                X, y = data
+                # Ensure tensors are properly structured and moved to device
+                X_rgb = X[0].to(device)
+                X_f = X[1].to(device)
+                y = y.to(device)
+
+                # Store true labels (move to CPU and convert to numpy)
+                y_true.append(y.cpu().numpy())
+
+                # Make predictions
+                y_pred = model(X_rgb, X_f)
+                y_pred = y_pred.argmax(dim=1).detach().cpu().numpy()
+                y_predictions.append(y_pred)
+
+                print(f"end batch {batch_number}")
+            except Exception as e:
+                print(f"Error in batch {batch_number}: {e}")
+                continue  # Skip the problematic batch
+
+    # Concatenate results for metrics
+    y_true = np.concatenate(y_true, axis=0)
+    y_predictions = np.concatenate(y_predictions, axis=0)
+
+    # Compute metrics
     compute_metrics(args, model, y_predictions, y_true)
 
 
