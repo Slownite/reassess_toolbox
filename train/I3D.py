@@ -83,7 +83,7 @@ def train(
             save_loss(loss.item(), args.path_to_model_save /
                       f"loss_{model}_{args.learning_rate}_{args.epochs}.txt".replace("\n", ""))
             print(f"batch {batch_number} done")
-        _, dataloader = init(args)
+       # _, dataloader = init(args)
     return model
 
 
