@@ -144,8 +144,8 @@ def evaluate(args, model, device) -> None:
             try:
                 X, y = data
                 # Ensure tensors are properly structured and moved to device
-                X_rgb = X[0].to(device)
-                X_f = X[1].to(device)
+                X_rgb = X[0].to(device).unsqueeze(2).unsqueeze(2)
+                X_f = X[1].to(device).unsqueeze(2).unsqueeze(2)
                 y = y.to(device)
 
                 # Store true labels (move to CPU and convert to numpy)
