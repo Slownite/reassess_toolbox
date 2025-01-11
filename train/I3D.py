@@ -55,6 +55,13 @@ def init(args) -> tuple[nn.Module, DataLoader, nn.Module]:
     return (model, dataloader)
 
 
+def weighted_loss(y_pred, y_true, sample_weights):
+    loss = nn.CrossEntropyLoss(reduction='none')  # Compute per-sample loss
+    per_sample_loss = loss(y_pred, y_true)
+    weighted_loss = (per_sample_loss * sample_weights).mean()  # Apply weights
+    return weighted_loss
+
+
 def train(
     args,
     device: torch.device,
@@ -62,7 +69,7 @@ def train(
 ) -> nn.Module:
     model, dataloader = init(args)
     optimizer = SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = weighted_loss
     model = model.to(device)
     model.train()
     for i in range(n_epochs):
@@ -78,7 +85,6 @@ def train(
             y_pred = model(X_rgb, X_f)
             loss = loss_fn(y_pred, y)
             # print("loss:", loss.item())
-            print(f"y: {y}, y_pred: {y_pred}")
             loss.backward()
             optimizer.step()
             save_loss(loss.item(), args.path_to_model_save /
