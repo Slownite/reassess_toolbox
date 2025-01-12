@@ -8,6 +8,7 @@ from sklearn.metrics import (
     f1_score,
     classification_report,
 )
+from imblearn.over_sampling import SMOTE
 import joblib
 import argparse
 import json
@@ -70,11 +71,18 @@ class I3DLoader:
         return X, y
 
 
-def train_random_forest(X, y, model_save_path, n_estimators=100, n_jobs=-1):
+def train_random_forest_with_smote(X, y, model_save_path, n_estimators=100, n_jobs=-1):
+    # Apply SMOTE to handle class imbalance
+    smote = SMOTE(random_state=42)
+    X_resampled, y_resampled = smote.fit_resample(X, y)
+
+    print(f"Data after SMOTE: Features: {
+          X_resampled.shape}, Labels: {y_resampled.shape}")
+
     # Train Random Forest
     rf_model = RandomForestClassifier(
-        n_estimators=n_estimators, n_jobs=n_jobs, random_state=42, class_weight='balanced')
-    rf_model.fit(X, y)
+        n_estimators=n_estimators, n_jobs=n_jobs, random_state=42)
+    rf_model.fit(X_resampled, y_resampled)
 
     # Save model
     joblib.dump(rf_model, model_save_path)
@@ -128,9 +136,9 @@ def main():
     print(f"Training Data Shape: Features: {
           X_train.shape}, Labels: {y_train.shape}")
 
-    # Train Random Forest
-    train_random_forest(X_train, y_train, args.model_save_path,
-                        n_estimators=args.n_estimators, n_jobs=args.n_jobs)
+    # Train Random Forest with SMOTE
+    train_random_forest_with_smote(X_train, y_train, args.model_save_path,
+                                   n_estimators=args.n_estimators, n_jobs=args.n_jobs)
 
     # Evaluate if test dataset is provided
     if args.test_dataset and args.test_schema:
