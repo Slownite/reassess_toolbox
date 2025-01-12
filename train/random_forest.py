@@ -74,7 +74,7 @@ class I3DLoader:
 def train_random_forest(X, y, model_save_path, n_estimators=100, n_jobs=-1):
     # Train Random Forest
     rf_model = RandomForestClassifier(
-        n_estimators=n_estimators, n_jobs=n_jobs, random_state=42)
+        n_estimators=n_estimators, n_jobs=n_jobs, random_state=42, class_weight='balanced')
     rf_model.fit(X, y)
 
     # Save model
