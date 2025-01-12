@@ -65,7 +65,9 @@ class I3DLoader:
             self.rgb_tensors.reshape(len(self.rgb_tensors), -1),
             self.flow_tensors.reshape(len(self.flow_tensors), -1)
         ], axis=1)
+        self.annotations = self.annotations[:len(self.rgb_tensors)]
         y = np.array(self.annotations)
+
         return X, y
 
 
