@@ -11,6 +11,70 @@ from utils import (
 )
 from more_itertools import flatten
 import numpy as np
+import mne
+
+
+class EDFAnnotationExtractor:
+    """
+    A class to extract and expose annotation data (onset and description)
+    from an EDF file using MNE.
+    """
+
+    def __init__(self, edf_file_path: str, encoding: str = 'latin1'):
+        """
+        Initialize the EDFAnnotationExtractor.
+
+        Parameters:
+        - edf_file_path (str): Path to the EDF file.
+        - encoding (str): Encoding to use for annotations. Default is 'latin1'.
+        """
+        self.edf_file_path = edf_file_path
+        self.encoding = encoding
+        self.annotations = None
+
+        # Load the EDF file and annotations
+        self._load_annotations()
+
+    def _load_annotations(self):
+        """
+        Load annotations from the EDF file.
+        """
+        try:
+            raw = mne.io.read_raw_edf(
+                self.edf_file_path, preload=False, verbose=False)
+            self.annotations = raw.annotations
+        except Exception as e:
+            raise ValueError(f"Error loading EDF file or annotations: {e}")
+
+    @property
+    def onsets(self):
+        """
+        Get the onset times of the annotations.
+
+        Returns:
+        - list: Onset times of the annotations.
+        """
+        if self.annotations:
+            return self.annotations.onset.tolist()
+        return []
+
+    @property
+    def descriptions(self):
+        """
+        Get the descriptions of the annotations.
+
+        Returns:
+        - list: Descriptions of the annotations.
+        """
+        if self.annotations:
+            return self.annotations.description.tolist()
+        return []
+
+    def __repr__(self):
+        return (
+            f"EDFAnnotationExtractor(edf_file_path='{self.edf_file_path}', "
+            f"encoding='{self.encoding}')"
+        )
 
 
 def standardize(rgb, flow):
@@ -58,3 +122,5 @@ class I3D_embeddings(Dataset):
         if index >= len(self):
             raise IndexError(f"index: {index} is out bound!")
         return (self.rgb_tensors[index], self.flow_tensors[index]), self.annotations[index]
+
+    class
