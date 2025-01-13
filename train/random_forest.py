@@ -66,7 +66,7 @@ class I3DLoader:
             self.rgb_tensors.reshape(len(self.rgb_tensors), -1),
             self.flow_tensors.reshape(len(self.flow_tensors), -1)
         ], axis=1)
-        y = np.array(self.annotations[:len(self.rgb_tensors)])
+        y = np.array(self.annotations)
 
         return X, y
 
@@ -76,8 +76,8 @@ def train_random_forest_with_smote(X, y, model_save_path, n_estimators=100, n_jo
     smote = SMOTE(random_state=42)
     X_resampled, y_resampled = smote.fit_resample(X, y)
 
-    print(f"Data after SMOTE: Features: {
-          X_resampled.shape}, Labels: {y_resampled.shape}")
+    print(
+        f"Data after SMOTE: Features: {X_resampled.shape}, Labels: {y_resampled.shape}")
 
     # Train Random Forest
     rf_model = RandomForestClassifier(
@@ -133,17 +133,17 @@ def main():
     train_loader = I3DLoader(args.train_dataset, args.train_schema)
     X_train, y_train = train_loader.get_data()
 
-    print(f"Training Data Shape: Features: {
-          X_train.shape}, Labels: {y_train.shape}")
+    print(
+        f"Training Data Shape: Features: {X_train.shape}, Labels: {y_train.shape}")
 
     # Train Random Forest with SMOTE
-    train_random_forest_with_smote(X_train, y_train, args.model_save_path,
-                                   n_estimators=args.n_estimators, n_jobs=args.n_jobs)
-
-    # Evaluate if test dataset is provided
-    if args.test_dataset and args.test_schema:
-        evaluate_random_forest(
-            args.model_save_path, args.test_dataset, args.test_schema, args.metrics_save_path)
+    # train_random_forest_with_smote(X_train, y_train, args.model_save_path,
+    #                                n_estimators=args.n_estimators, n_jobs=args.n_jobs)
+    #
+    # # Evaluate if test dataset is provided
+    # if args.test_dataset and args.test_schema:
+    #     evaluate_random_forest(
+    #         args.model_save_path, args.test_dataset, args.test_schema, args.metrics_save_path)
 
 
 if __name__ == "__main__":
