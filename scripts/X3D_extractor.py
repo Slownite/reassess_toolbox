@@ -1,5 +1,5 @@
 import torch
-from pytorchvideo.models import create_x3d
+from pytorchvideo.models import x3d
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
 from argparse import ArgumentParser
@@ -56,8 +56,8 @@ def init(args):
     dataset = X3DDatasetRGB(
         args.source_file, block=args.window_size, transform=transform)
 
-    model = create_x3d(input_clip_length=16,
-                       model_num_class=400, model_depth="l")
+    model = model = torch.hub.load(
+        'facebookresearch/pytorchvideo', 'x3d_l', pretrained=True)
     model.head = nn.Identity()  # Remove classification head for feature extraction
 
     return model, dataset
