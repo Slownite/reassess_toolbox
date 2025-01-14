@@ -12,6 +12,7 @@ from utils import (
 from more_itertools import flatten
 import numpy as np
 import mne
+import argparse
 
 
 def standardize(rgb, flow):
@@ -185,19 +186,17 @@ class NpyEdfDataset(Dataset):
         return self.file_paths[self.current_file_index], self.current_position_in_file
 
 
-# Example usage:
 if __name__ == "__main__":
-    # List of .npy and .edf files
-    file_paths = ["file1.npy", "file2.npy", "file3.npy"]
-    edf_paths = ["file1.edf", "file2.edf", "file3.edf"]
-    annotation_json = "annotations.json"  # Path to the annotation mapping JSON
-
-    # Create the dataset
-    dataset = NpyEdfDataset(file_paths, edf_paths, annotation_json)
-
-    # Access data
+    parser = argparse.ArgumentParser(prog="test NpyEdf dataset")
+    parser.add_argument("--npy", type=pathlib.Path, required=True)
+    parser.add_argument("--edf", type=pathlib.Path, required=True)
+    parser.add_argument("--schema", type=pathlib.Path, required=True)
+    parser.add_argument("-f", "--frame_duration", default=1/25, type=float)
+    parser.add_argument("-w", "--window_duration", default=3, type=float)
+    args = parser.parse_args()
+    dataset = NpyEdfDataset(args.npy, args.edf, args.schema,
+                            args.frame_duration, args.window_duration)
     for i in range(len(dataset)):
-        data, annotation = dataset[i]
+        data = dataset[i]
         current_file, position = dataset.get_current_file_info()
-        print(f"Data: {data}, Annotation: {annotation}, File: {
-              current_file}, Position: {position}")
+        print(f"Data: {data[1]}, File: {current_file}, Position: {position}")
