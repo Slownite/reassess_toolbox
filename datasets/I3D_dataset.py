@@ -72,9 +72,6 @@ class NpyEdfDataset(Dataset):
             frame_duration (float): Duration of each frame in seconds (e.g., 0.01 for 10ms).
             window_duration (float): Duration of the time window around an event to be marked as 1 (in seconds).
         """
-        assert len(file_paths) == len(
-            edf_paths), "Number of .npy and .edf files must match."
-
         self.file_paths = file_paths
         self.edf_paths = edf_paths
         self.frame_duration = frame_duration
