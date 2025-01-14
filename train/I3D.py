@@ -7,7 +7,7 @@ from torch import nn
 from torch.optim import Optimizer, SGD
 from torch.optim.lr_scheduler import StepLR
 import torch
-from datasets import I3D_embeddings
+from datasets import MultiNpyEdf
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
 from modules import RGB_I3D_head, OF_I3D_head
 from tqdm.auto import tqdm
@@ -21,15 +21,13 @@ def load(
     dataset: Dataset,
     dataset_path: pathlib.Path,
     schema_json: pathlib.Path,
-    policy: str = "two_class_policy",
     b_size=5,
     shuffle=True,
     n_workers=2,
-    downsampling=True,
 ) -> Dataset:
-    data = dataset(dataset_path, schema_json, policy=policy)
-    if downsampling:
-        data = downsample(data)
+    npy_files = dataset_path.rglob("*.npy")
+    edf_files = dataset_path.rglob("*.edf")
+    data = dataset(npy_files, edf_files, schema_json)
     dataloader = DataLoader(
         data,
         batch_size=b_size,
@@ -44,7 +42,7 @@ def init(args) -> tuple[nn.Module, DataLoader, nn.Module]:
     arch = {"RGB_I3D": RGB_I3D_head, "OF_I3D": OF_I3D_head}
     model = arch[args.model](args.target)
     dataloader = load(
-        I3D_embeddings,
+        MultiNpyEdf,
         args.data_path,
         args.schema_path,
         policy=args.policy,
@@ -125,7 +123,7 @@ def compute_metrics(args, model, y_pred, y_true):
 
 def evaluate(args, model, device) -> None:
     dataloader = load(
-        I3D_embeddings,
+        MultiNpyEdf,
         args.testset,
         args.schema_path,
         policy=args.policy,
@@ -182,7 +180,6 @@ def main() -> None:
     parser.add_argument("-l", "--learning_rate", type=float, default=1e-3)
     parser.add_argument("-t", "--target", type=int, default=2)
     parser.add_argument("-m", "--model", type=str, default="RGB_I3D")
-    parser.add_argument("--policy", type=str, default="two_class_policy")
     parser.add_argument("-b", "--batch_size", type=int, default=10)
     parser.add_argument("-e", "--epochs", type=int, default=1)
     parser.add_argument("-wk", "--workers", type=int, default=0)

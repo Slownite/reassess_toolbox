@@ -62,138 +62,88 @@ class I3D_embeddings(Dataset):
         return (self.rgb_tensors[index], self.flow_tensors[index]), self.annotations[index]
 
 
-class NpyEdfDataset(Dataset):
-    def __init__(self, file_paths, edf_paths, annotation_json, frame_duration=0.01, window_duration=1.0):
-        """
-        Args:
-            file_paths (list of str): List of paths to the .npy files.
-            edf_paths (list of str): List of paths to the .edf files (same order as .npy files).
-            annotation_json (str): Path to a JSON file mapping annotations to replacements.
-            frame_duration (float): Duration of each frame in seconds (e.g., 0.01 for 10ms).
-            window_duration (float): Duration of the time window around an event to be marked as 1 (in seconds).
-        """
-        self.file_paths = file_paths
-        self.edf_paths = edf_paths
-        self.frame_duration = frame_duration
-        self.window_duration = window_duration
-
-        # Load the annotation replacement map from JSON
-        with open(annotation_json, 'r') as f:
-            self.annotation_map = json.load(f)
-
-        self.current_file_index = 0
-        self.current_position_in_file = 0
-        self.file_data = None
-        self.annotations = None
-
-        # Load the first file and its annotations
-        self._load_file(
-            self.file_paths[self.current_file_index], self.edf_paths[self.current_file_index])
-
-        # Create a mapping of file index to data indices for len and indexing
-        self.file_start_indices = [0]
-        self.total_length = 0
-
-        for file_path in self.file_paths:
-            data = np.load(file_path)
-            self.total_length += len(data)
-            self.file_start_indices.append(self.total_length)
-
-    def _load_file(self, file_path, edf_path):
-        """Load data from the given .npy file and its corresponding .edf file."""
-        self.file_data = np.load(file_path)
-        self.annotations = self._load_edf_annotations(edf_path)
-
-    def _load_edf_annotations(self, edf_path):
-        """Load annotations from an .edf file using MNE."""
+class NpyEdf(Dataset):
+    def __init__(self, npy_file, edf_file, schema_file, frame_rate=25, size_image_block=64) -> None:
+        self.npy = np.load(npy_file)
         raw = mne.io.read_raw_edf(
-            edf_path, preload=False, verbose=False, encoding='latin1')
+            edf_file, preload=False, verbose=False, encoding='latin1')
         annotations = raw.annotations
-
-        onset_times = annotations.onset  # Onset times in seconds
-        durations = annotations.duration  # Duration of each event
+        # Onset times in seconds
+        onset_times = np.round(annotations.onset *
+                               frame_rate).astype(int).tolist()
         labels = annotations.description  # Labels for each event
-
-        # Convert onset times to embedding indices
-        embedding_indices = [int(onset / (self.frame_duration * 64))
-                             for onset in onset_times]
-
-        return list(zip(embedding_indices, durations, labels))
+        with open(schema_file, 'r') as file:
+            schema = json.load(file)
+        self.annotations = {
+            k: schema.get(v, 0) for k, v in zip(onset_times, labels)
+        }
+        self.size = size_image_block
 
     def __len__(self):
-        return self.total_length
+        return len(self.npy)
 
     def __getitem__(self, index):
-        """
-        Retrieve an item by its global index.
+        if index >= len(self):
+            raise IndexError()
+        start = index * self.size
+        end = start + self.size
+        annotation = 1 if sum([key for key in range(
+            start, end) if key in self.annotations]) > 0 else 0
+        return self.npy[index], annotation
 
-        Args:
-            index (int): Global index across all files.
 
-        Returns:
-            tuple: (data, annotations) for the corresponding embedding.
-        """
-        if index < 0 or index >= self.total_length:
-            raise IndexError("Index out of range")
+class MultiNpyEdf(Dataset):
+    def __init__(self, npy_files, edf_files, schema_file, frame_rate=25, size_image_block=64) -> None:
+        self.data = [NpyEdf(npy_file, edf_file, schema_file, frame_rate, size_image_block)
+                     for npy_file, edf_file in zip(npy_files, edf_files)]
+        # Precompute lengths for easier indexing
+        self.lengths = [len(dataset) for dataset in self.data]
+        self.cumulative_lengths = [0] + \
+            list(self._cumulative_sum(self.lengths))
 
-        # Determine which file this index belongs to
-        for file_idx in range(len(self.file_start_indices) - 1):
-            start = self.file_start_indices[file_idx]
-            end = self.file_start_indices[file_idx + 1]
-            if start <= index < end:
-                if file_idx != self.current_file_index:
-                    self.current_file_index = file_idx
-                    self._load_file(
-                        self.file_paths[self.current_file_index], self.edf_paths[self.current_file_index])
+    def _cumulative_sum(self, lengths):
+        """Helper method to compute cumulative sums."""
+        total = 0
+        for length in lengths:
+            total += length
+            yield total
 
-                self.current_position_in_file = index - start
-                break
+    def __len__(self):
+        return sum(self.lengths)
 
-        data = self.file_data[self.current_position_in_file]
-        annotation = self._get_annotation_for_index(
-            self.current_position_in_file)
+    def __getitem__(self, index):
+        if index < 0 or index >= len(self):
+            raise IndexError(
+                f"Index {index} out of range for dataset of length {len(self)}")
 
-        return data, annotation
+        # Find the dataset and local index within that dataset
+        dataset_idx = self._find_dataset_index(index)
+        local_index = index - self.cumulative_lengths[dataset_idx]
 
-    def _get_annotation_for_index(self, index):
-        """
-        Retrieve the annotation for a given embedding index, including a time window around events.
+        # Access the corresponding dataset and retrieve the item
+        return self.data[dataset_idx][local_index]
 
-        Args:
-            index (int): Index of the embedding within the current file.
-
-        Returns:
-            int: 1 if the annotation or its surrounding window is mapped to a value in the JSON, 0 otherwise.
-        """
-        window_frames = int(self.window_duration / (self.frame_duration * 64))
-
-        for embedding_index, duration, label in self.annotations:
-            if abs(embedding_index - index) <= window_frames:
-                return self.annotation_map.get(label, 0)
-
-        return 0
-
-    def get_current_file_info(self):
-        """
-        Get the current file and position within that file.
-
-        Returns:
-            tuple: (current_file_path, current_position_in_file)
-        """
-        return self.file_paths[self.current_file_index], self.current_position_in_file
+    def _find_dataset_index(self, global_index):
+        """Find the dataset index for a given global index using cumulative lengths."""
+        for i, cum_length in enumerate(self.cumulative_lengths[1:]):
+            if global_index < cum_length:
+                return i
+        raise IndexError(
+            f"Global index {global_index} not found in any dataset")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="test NpyEdf dataset")
-    parser.add_argument("--npy", type=pathlib.Path, required=True)
-    parser.add_argument("--edf", type=pathlib.Path, required=True)
+    parser.add_argument("--npy", type=pathlib.Path, nargs='+',
+                        required=True, help="List of .npy files")
+    parser.add_argument("--edf", type=pathlib.Path, nargs='+',
+                        required=True, help="List of .edf files")
     parser.add_argument("--schema", type=pathlib.Path, required=True)
     parser.add_argument("-f", "--frame_duration", default=1/25, type=float)
     parser.add_argument("-w", "--window_duration", default=3, type=float)
     args = parser.parse_args()
-    dataset = NpyEdfDataset(args.npy, args.edf, args.schema,
-                            args.frame_duration, args.window_duration)
+    dataset = MultiNpyEdf(args.npy, args.edf, args.schema)
     for i in range(len(dataset)):
-        data = dataset[i]
-        current_file, position = dataset.get_current_file_info()
-        print(f"Data: {data[1]}, File: {current_file}, Position: {position}")
+        input = dataset[i]
+        print(
+            f"label: {input[1]} at position start {i * 64} end {(i * 64) + 64}")
