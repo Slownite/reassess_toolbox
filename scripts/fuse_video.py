@@ -1,68 +1,66 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 import argparse
 
 
-def concatenate_videos(output_file: str, input_files: list):
-    """
-    Concatenate multiple video files into a single video using ffmpeg.
+def fuse_videos(directory):
+    directory = Path(directory)
+    for subdir in directory.iterdir():
+        if subdir.is_dir():
+            flow_videos = []
+            rgb_videos = []
 
-    Parameters:
-    - output_file (str): Path to the output video file.
-    - input_files (list): List of paths to input video files.
-    """
-    # Convert input files to Path objects
-    input_paths = [Path(file) for file in input_files]
+            for file in subdir.iterdir():
+                if file.suffix == ".mp4":
+                    if "flow" in file.name:
+                        flow_videos.append(file)
+                    elif "rgb" in file.name:
+                        rgb_videos.append(file)
 
-    # Check if all input files exist
-    for file in input_paths:
-        if not file.exists():
-            raise FileNotFoundError(f"Input file not found: {file}")
+            parent_name = subdir.name
 
-    # Create a temporary file for the file list
-    temp_file = Path("file_list.txt")
-    with temp_file.open("w") as f:
-        for file in input_paths:
-            # ffmpeg requires the file paths to be prefixed with "file "
-            f.write(f"file '{file.as_posix()}'\n")
+            if flow_videos:
+                flow_videos.sort()
+                flow_output = subdir / f"0flow_{parent_name}.mp4"
+                fuse_video_files(flow_videos, flow_output)
 
-    # Run ffmpeg to concatenate the videos
+            if rgb_videos:
+                rgb_videos.sort()
+                rgb_output = subdir / f"0rgb_{parent_name}.mp4"
+                fuse_video_files(rgb_videos, rgb_output)
+
+
+def fuse_video_files(video_files, output_file):
+    list_file = Path("input_videos.txt")
+
+    with list_file.open("w") as f:
+        for video in video_files:
+            f.write(f"file '{video}'\n")
+
+    command = [
+        "ffmpeg",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", str(list_file),
+        "-c", "copy",
+        str(output_file)
+    ]
+
     try:
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", temp_file.as_posix(),
-                "-c", "copy",
-                output_file
-            ],
-            check=True
-        )
-        print(f"Concatenation complete. Output file: {output_file}")
+        subprocess.run(command, check=True)
+        print(f"Fused video saved as: {output_file}")
     except subprocess.CalledProcessError as e:
-        print(f"Error during concatenation: {e}")
+        print(f"Error during fusion: {e}")
     finally:
-        # Clean up the temporary file
-        if temp_file.exists():
-            temp_file.unlink()
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Concatenate multiple videos into one using ffmpeg.")
-    parser.add_argument("output_file", type=str,
-                        help="Path to the output video file.")
-    parser.add_argument("input_files", type=str, nargs='+',
-                        help="Paths to input video files.")
-
-    args = parser.parse_args()
-
-    try:
-        concatenate_videos(args.output_file, args.input_files)
-    except Exception as e:
-        print(f"Error: {e}")
+        list_file.unlink()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Fuse videos by type in each subdirectory.")
+    parser.add_argument("directory", type=str,
+                        help="Base directory containing subdirectories with videos.")
+    args = parser.parse_args()
+
+    base_directory = args.directory
+    fuse_videos(base_directory)
