@@ -139,10 +139,16 @@ def extract_and_save(model, loader, device, filename, batch_size):
     model.eval()
     with torch.no_grad():
         for data in tqdm(loader):
+            print("load on gpu")
             data = data.to(device, non_blocking=True)
+            print("load done")
+            print("inference start")
             embeddings = model(data)
+            print("inference done")
+            print("saving time")
             write_embedding_to_file_in_chunks(
                 embeddings.cpu().numpy(), filename)
+            print("saving done")
 
 
 # Main function
