@@ -1,5 +1,4 @@
 import torch
-from pytorchvideo.models import x3d
 from torch.utils.data import DataLoader, Dataset
 from torch import nn
 from argparse import ArgumentParser
@@ -7,12 +6,74 @@ import pathlib
 from tqdm.auto import tqdm
 from npy_append_array import NpyAppendArray
 from torchvision.transforms import Compose, Lambda
-from pytorchvideo.transforms import (
-    UniformTemporalSubsample, Normalize, ShortSideScale)
-from torchvision.transforms._transforms_video import ToTensorVideo
-import os
+from torchvision.transforms.functional import normalize, resize
 
-# Dataset for X3D
+
+class UniformTemporalSubsample:
+    def __init__(self, num_samples):
+        """
+        Uniformly subsamples frames from a video.
+        Args:
+            num_samples (int): Number of frames to sample.
+        """
+        self.num_samples = num_samples
+
+    def __call__(self, video):
+        """
+        Args:
+            video (torch.Tensor): Video tensor of shape (T, C, H, W).
+        Returns:
+            torch.Tensor: Subsampled video of shape (num_samples, C, H, W).
+        """
+        t = video.shape[0]
+        indices = torch.linspace(0, t - 1, self.num_samples).long()
+        return video[indices]
+
+
+class Normalize:
+    def __init__(self, mean, std):
+        """
+        Normalizes each frame of a video.
+        Args:
+            mean (list): Mean values for each channel.
+            std (list): Standard deviation values for each channel.
+        """
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, video):
+        """
+        Args:
+            video (torch.Tensor): Video tensor of shape (T, C, H, W).
+        Returns:
+            torch.Tensor: Normalized video of shape (T, C, H, W).
+        """
+        return torch.stack([normalize(frame, self.mean, self.std) for frame in video])
+
+
+class ShortSideScale:
+    def __init__(self, target_size):
+        """
+        Resizes the video so the shorter side matches the target size.
+        Args:
+            target_size (int): Target size for the shorter side.
+        """
+        self.target_size = target_size
+
+    def __call__(self, video):
+        """
+        Args:
+            video (torch.Tensor): Video tensor of shape (T, C, H, W).
+        Returns:
+            torch.Tensor: Resized video of shape (T, C, new_H, new_W).
+        """
+        _, _, h, w = video.shape
+        if h < w:
+            new_h, new_w = self.target_size, int(w * self.target_size / h)
+        else:
+            new_h, new_w = int(h * self.target_size / w), self.target_size
+
+        return torch.stack([resize(frame, (new_h, new_w)) for frame in video])
 
 
 class X3DDatasetRGB(Dataset):
@@ -47,7 +108,6 @@ class X3DDatasetRGB(Dataset):
 def init(args):
     transform = Compose([
         UniformTemporalSubsample(16),  # Subsample 16 frames
-        ToTensorVideo(),  # Convert to tensor
         Lambda(lambda x: x / 255.0),  # Normalize to [0, 1]
         Normalize(mean=(0.45, 0.45, 0.45), std=(0.225, 0.225, 0.225)),
         ShortSideScale(256),  # Resize shorter side to 256
