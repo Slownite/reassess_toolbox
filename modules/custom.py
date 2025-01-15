@@ -2,6 +2,8 @@ from torch import nn
 import torch
 import torch.nn.functional as F
 from .I3D import Unit3D
+
+
 class RGB_I3D_head(nn.Module):
     def __init__(self, num_classes: int = 2):
         super().__init__()
@@ -17,14 +19,17 @@ class RGB_I3D_head(nn.Module):
             use_bias=True,
             name="logits",
         )
+
     def __str__(self):
         return "I3D_rgb"
-    def forward(self, X_1: torch.Tensor, X_2: torch.Tensor)->torch.Tensor:
+
+    def forward(self, X_1: torch.Tensor, X_2: torch.Tensor) -> torch.Tensor:
         x = self.adapt_pooling(X_1)
         x = self.model(x)
         logits = x.squeeze(3).squeeze(3)
-        mean_logits =  logits.mean(2)
-        return F.softmax(mean_logits, dim=1)
+        mean_logits = logits.mean(2)
+        return mean_logits
+
 
 class OF_I3D_head(nn.Module):
     def __init__(self, num_classes: int = 2):
@@ -41,11 +46,13 @@ class OF_I3D_head(nn.Module):
             use_bias=True,
             name="logits",
         )
+
     def __str__(self):
         return "I3D_rgb"
-    def forward(self, X_1: torch.Tensor, X_2: torch.Tensor)->torch.Tensor:
+
+    def forward(self, X_1: torch.Tensor, X_2: torch.Tensor) -> torch.Tensor:
         x = self.adapt_pooling(X_2)
         x = self.model(x)
         logits = x.squeeze(3).squeeze(3)
-        mean_logits =  logits.mean(2)
-        return F.softmax(mean_logits, dim=1)
+        mean_logits = logits.mean(2)
+        return mean_logits

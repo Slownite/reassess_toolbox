@@ -21,11 +21,15 @@ def load(
     dataset: Dataset,
     dataset_path: pathlib.Path,
     schema_json: pathlib.Path,
+    model: str,
     b_size=5,
     shuffle=True,
     n_workers=2,
 ) -> Dataset:
-    npy_files = dataset_path.rglob("*.npy")
+    if model == "OF_I3D":
+        npy_files = dataset_path.rglob("flow_*.npy")
+    else:
+        npy_files = dataset_path.rglob("rgb_*.npy")
     edf_files = dataset_path.rglob("*.edf")
     data = dataset(npy_files, edf_files, schema_json)
     dataloader = DataLoader(
@@ -45,7 +49,7 @@ def init(args) -> tuple[nn.Module, DataLoader, nn.Module]:
         MultiNpyEdf,
         args.data_path,
         args.schema_path,
-        policy=args.policy,
+        args.model,
         b_size=args.batch_size,
         shuffle=args.shuffle,
         n_workers=args.workers,
@@ -71,10 +75,10 @@ def train(
             print(f"start batch {batch_number}")
             X, y = data
             optimizer.zero_grad()  # Use optimizer.zero_grad() instead of scheduler.zero_grad()
-            X_rgb = X[0]
-            X_f = X[1]
-            X_rgb = X_rgb.to(device).unsqueeze(2).unsqueeze(2)
-            X_f = X_f.to(device).unsqueeze(2).unsqueeze(2)
+            X_rgb = X
+            X_f = X
+            X_rgb = X_rgb.to(device)
+            X_f = X_f.to(device)
             y = y.to(device)
             y_pred = model(X_rgb, X_f)
             loss = loss_fn(y_pred, y)
@@ -126,7 +130,6 @@ def evaluate(args, model, device) -> None:
         MultiNpyEdf,
         args.testset,
         args.schema_path,
-        policy=args.policy,
         b_size=args.batch_size,
         shuffle=args.shuffle,
         n_workers=args.workers,
