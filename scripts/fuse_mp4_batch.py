@@ -3,13 +3,12 @@ import subprocess
 import argparse
 
 
-def process_video_subdirectories(root_dir: str, script_path: str):
+def process_video_subdirectories(root_dir: str):
     """
-    Process subdirectories containing 'rgb_*.mp4' or 'flow_*.mp4' files.
+    Process subdirectories containing 'rgb_*.mp4' or 'flow_*.mp4' files by fusing them together.
 
     Parameters:
     - root_dir (str): The root directory to search for subdirectories.
-    - script_path (str): Path to the script that processes .mp4 files.
     """
     root_path = Path(root_dir)
 
@@ -25,43 +24,61 @@ def process_video_subdirectories(root_dir: str, script_path: str):
 
             if rgb_files:
                 output_file = sub_dir / f"rgb_{sub_dir.name}.mp4"
-                run_script(script_path, output_file, rgb_files)
+                fuse_videos(output_file, rgb_files)
 
             if flow_files:
                 output_file = sub_dir / f"flow_{sub_dir.name}.mp4"
-                run_script(script_path, output_file, flow_files)
+                fuse_videos(output_file, flow_files)
 
 
-def run_script(script_path: str, output_file: Path, input_files: list):
+def fuse_videos(output_file: Path, input_files: list):
     """
-    Run the provided script with the given arguments.
+    Fuse multiple video files together into a single output file using ffmpeg.
 
     Parameters:
-    - script_path (str): Path to the script that processes .mp4 files.
     - output_file (Path): The output .mp4 file.
     - input_files (list): List of input .mp4 files.
     """
-    command = ["python", script_path, str(
-        output_file)] + [str(file) for file in input_files]
+    if len(input_files) == 1:
+        # If there's only one file, simply copy it to the output
+        input_file = input_files[0]
+        print(f"Only one video found. Copying {input_file} to {output_file}.")
+        subprocess.run(["cp", str(input_file), str(output_file)], check=True)
+        return
+
+    # Create a temporary file list for ffmpeg
+    file_list_path = output_file.parent / "file_list.txt"
+    with open(file_list_path, "w") as file_list:
+        for file in input_files:
+            file_list.write(f"file '{file}'\n")
+
+    # Use ffmpeg to concatenate the videos
+    command = [
+        "ffmpeg", "-f", "concat", "-safe", "0", "-i", str(
+            file_list_path), "-c", "copy", str(output_file)
+    ]
+
     try:
         subprocess.run(command, check=True)
-        print(f"Successfully processed videos into: {output_file}")
+        print(f"Successfully fused videos into: {output_file}")
     except subprocess.CalledProcessError as e:
-        print(f"Error while processing videos: {e}")
+        print(f"Error while fusing videos: {e}")
+    finally:
+        # Clean up the temporary file list
+        if file_list_path.exists():
+            file_list_path.unlink()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Process subdirectories containing specific .mp4 files.")
+        description="Process subdirectories containing specific .mp4 files and fuse them together.")
     parser.add_argument("root_dir", type=str,
                         help="Root directory to search for subdirectories.")
-    parser.add_argument("script_path", type=str,
-                        help="Path to the script that processes .mp4 files.")
 
     args = parser.parse_args()
 
     try:
-        process_video_subdirectories(args.root_dir, args.script_path)
+        process_video_subdirectories(args.root_dir)
     except Exception as e:
         print(f"Error: {e}")
 
