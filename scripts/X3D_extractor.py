@@ -114,7 +114,7 @@ def init(args):
     ])
 
     dataset = X3DDatasetRGB(
-        args.source_file, block=args.window_size)
+        args.source_file, block=args.window_size, transform=transform)
 
     model = model = torch.hub.load(
         'facebookresearch/pytorchvideo', 'x3d_l', pretrained=True)
@@ -163,7 +163,7 @@ def main():
     parser.add_argument("-b", "--batch_size", type=int,
                         default=16, help="Batch size for DataLoader")
     parser.add_argument("-nw", "--num_workers", type=int,
-                        default=4, help="Number of workers for DataLoader")
+                        default=0, help="Number of workers for DataLoader")
     args = parser.parse_args()
 
     result_file = args.dest_file.parent / \
