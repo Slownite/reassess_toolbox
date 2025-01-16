@@ -56,3 +56,27 @@ class OF_I3D_head(nn.Module):
         logits = x.squeeze(3).squeeze(3)
         mean_logits = logits.mean(2)
         return mean_logits
+
+
+class X3D_head(nn.Module):
+    def __init__(self, input_dim=2048, hidden_dims=[1024, 512], num_classes=2, dropout_prob=0.5):
+        super(X3D_head, self).__init__()
+
+        layers = []
+        current_dim = input_dim
+
+        for hidden_dim in hidden_dims:
+            layers.append(nn.Linear(current_dim, hidden_dim))
+            layers.append(nn.ReLU())  # Non-linear activation
+            layers.append(nn.BatchNorm1d(hidden_dim))  # Batch Normalization
+            # Dropout for regularization
+            layers.append(nn.Dropout(dropout_prob))
+            current_dim = hidden_dim
+
+        # Output layer
+        layers.append(nn.Linear(current_dim, num_classes))
+
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, X):
+        return self.model(X)

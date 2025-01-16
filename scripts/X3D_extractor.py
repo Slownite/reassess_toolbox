@@ -9,6 +9,23 @@ from torchvision.transforms import Compose
 import glob
 
 
+def modif_blocks(model):
+    last_block = model.blocks[5]
+    last_block.dropout = torch.nn.Identity()
+    last_block.proj = torch.nn.Identity()
+    last_block.activation = torch.nn.Identity()
+    last_block.output_pool = torch.nn.Identity()
+    model.blocks[5] = last_block
+    return model
+
+
+def create_X3DM_features():
+    model = torch.hub.load(
+        'facebookresearch/pytorchvideo', 'x3d_m', pretrained=True
+    )
+    return modif_blocks(model)
+
+
 class X3DDatasetRGB(Dataset):
     def __init__(self, video_path, block=64, transform=None):
         from utils import VideoStreamer
@@ -41,12 +58,7 @@ def init(video_path, window_size):
     ])
 
     dataset = X3DDatasetRGB(video_path, block=window_size, transform=transform)
-
-    model = torch.hub.load(
-        'facebookresearch/pytorchvideo', 'x3d_m', pretrained=True
-    )
-    model.head = nn.Identity()  # Remove classification head for feature extraction
-
+    model = create_X3DM_features()
     return model, dataset
 
 
