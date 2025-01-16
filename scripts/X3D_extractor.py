@@ -43,7 +43,7 @@ def init(video_path, window_size):
     dataset = X3DDatasetRGB(video_path, block=window_size, transform=transform)
 
     model = torch.hub.load(
-        'facebookresearch/pytorchvideo', 'x3d_l', pretrained=True
+        'facebookresearch/pytorchvideo', 'x3d_m', pretrained=True
     )
     model.head = nn.Identity()  # Remove classification head for feature extraction
 
@@ -97,8 +97,8 @@ def main():
         output_file = video_path.parent / f"{video_path.stem}_x3dm.npy"
 
         if output_file.exists():
-            print(f"Output file {
-                  output_file} already exists. Skipping {video_file}.")
+            print(
+                f"Output file {output_file} already exists. Skipping {video_file}.")
             continue
 
         print(f"Processing {video_file}...")
