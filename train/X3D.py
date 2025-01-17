@@ -75,7 +75,6 @@ def train(
             print(f"start batch {batch_number}")
             X, y = data
             optimizer.zero_grad()  # Use optimizer.zero_grad() instead of scheduler.zero_grad()
-            print(X.shape)
             X = X.to(device)
             y = y.to(device)
             y_pred = model(X)
