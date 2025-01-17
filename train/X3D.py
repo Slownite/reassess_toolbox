@@ -26,10 +26,10 @@ def load(
     shuffle=True,
     n_workers=2,
 ) -> Dataset:
-    if model == "OF_I3D":
-        npy_files = dataset_path.rglob("0flow_*.npy")
+    if model == "OF_X3D":
+        npy_files = dataset_path.rglob("0flow_*x3d*.npy")
     else:
-        npy_files = dataset_path.rglob("0rgb_*.npy")
+        npy_files = dataset_path.rglob("0rgb_*x3d*.npy")
     edf_files = dataset_path.rglob("*.edf")
     data = dataset(npy_files, edf_files, schema_json)
     dataloader = DataLoader(
