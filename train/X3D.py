@@ -105,7 +105,10 @@ def compute_metrics(args, model, y_pred, y_true):
             roc_auc = roc_auc_score(y_true, y_pred)
         else:
             roc_auc = "Not Applicable for multi-class"
-
+        weighted_precision = precision_score(
+            y_true, y_pred, average='weighted')
+        weighted_recall = recall_score(y_true, y_pred, average='weighted')
+        weighted_f1 = f1_score(y_true, y_pred, average='weighted')
         results = {
             "Model": f"{model}_{args.learning_rate}_{args.epochs}",
             "Accuracy": accuracy,
@@ -114,7 +117,10 @@ def compute_metrics(args, model, y_pred, y_true):
             "F1 Score": f1,
             "F2 Score": f2,
             "Specificity": specificity,
-            "ROC AUC": roc_auc
+            "ROC AUC": roc_auc,
+            "Weighted Precision": weighted_precision,
+            "Weighted Recall": weighted_recall,
+            "Weighted F1 Score": weighted_f1
         }
         write_dict_to_csv(results, 'results.csv', write_headers=True)
         print('result saved in the file results.csv')
