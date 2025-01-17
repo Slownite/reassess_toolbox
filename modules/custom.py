@@ -80,3 +80,6 @@ class X3D_head(nn.Module):
 
     def forward(self, X):
         return self.model(X)
+
+    def __str__(self):
+        return "X3D_rgb"
