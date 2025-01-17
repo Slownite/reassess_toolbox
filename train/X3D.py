@@ -53,7 +53,6 @@ def init(args) -> tuple[nn.Module, DataLoader, nn.Module]:
         args.model,
         b_size=args.batch_size,
         shuffle=args.shuffle,
-        n_workers=args.workers,
     )
 
     return (model, dataloader)
@@ -66,7 +65,7 @@ def train(
 ) -> nn.Module:
     model, dataloader = init(args)
     optimizer = SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
-    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
     loss_fn = nn.CrossEntropyLoss(
         weight=torch.tensor([1.0015, 662.7814])).to(device)
     model = model.to(device)
@@ -132,7 +131,6 @@ def evaluate(args, model, device) -> None:
         args.model,
         b_size=args.batch_size,
         shuffle=args.shuffle,
-        n_workers=args.workers,
     )
     y_predictions = []
     y_true = []
@@ -184,7 +182,6 @@ def main() -> None:
     parser.add_argument("-b", "--batch_size", type=int, default=10)
     parser.add_argument("-e", "--epochs", type=int, default=1)
     parser.add_argument("-d", "--dropout", type=float, default=0.3)
-    parser.add_argument("-wk", "--workers", type=int, default=0)
     parser.add_argument("-s", "--shuffle", type=bool, default=True)
     parser.add_argument("--testset", type=pathlib.Path, default=None)
     args = parser.parse_args()
