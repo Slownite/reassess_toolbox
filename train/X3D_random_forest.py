@@ -39,7 +39,8 @@ def load_data(dataset, dataset_path, schema_json):
 
 def train_random_forest(X_train, y_train, n_estimators=100):
     """Train a Random Forest classifier."""
-    model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+    model = RandomForestClassifier(
+        n_estimators=n_estimators, random_state=42, n_jobs=-1)
     model.fit(X_train, y_train)
     return model
 
@@ -54,6 +55,7 @@ def compute_metrics(y_true, y_pred):
         f1 = f1_score(y_true, y_pred, average='binary')
         f2 = fbeta_score(y_true, y_pred, beta=2)
         specificity = tn / (tn + fp)
+        roc_auc = roc_auc_score(y_true, y_pred)
 
         results = {
             "Accuracy": accuracy,
@@ -62,6 +64,7 @@ def compute_metrics(y_true, y_pred):
             "F1 Score": f1,
             "F2 Score": f2,
             "Specificity": specificity,
+            "ROC AUC": roc_auc,
         }
 
         # Print results
