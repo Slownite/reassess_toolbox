@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 import torch
 from datasets import MultiNpyEdf
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
-from modules import X3D_head
+from modules import X3D_head, Enhanced_X3D_head
 from tqdm.auto import tqdm
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
 from sklearn.metrics import make_scorer, fbeta_score
@@ -43,7 +43,7 @@ def load(
 
 
 def init(args) -> tuple[nn.Module, DataLoader, nn.Module]:
-    arch = {"RGB_X3D": X3D_head, "OF_X3D": X3D_head}
+    arch = {"RGB_X3D": Enhanced_X3D_head, "OF_X3D": Enhanced_X3D_head}
     model = arch[args.model](num_classes=args.target,
                              dropout_prob=args.dropout)
     dataloader = load(

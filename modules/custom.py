@@ -83,3 +83,44 @@ class X3D_head(nn.Module):
 
     def __str__(self):
         return "X3D_rgb"
+
+
+class Enhanced_X3D_head(nn.Module):
+    def __init__(self, input_dim=401408, hidden_dims=[200704,
+                                                      100352,
+                                                      50176,
+                                                      25088,
+                                                      12544,
+                                                      6272,
+                                                      2048,
+                                                      1024,
+                                                      512],
+                 num_classes=2, dropout_prob=0.5):
+        super(Enhanced_X3D_head, self).__init__()
+
+        self.input_layer = nn.Sequential(
+            nn.Linear(input_dim, hidden_dims[0]),
+            nn.ReLU(),
+            nn.BatchNorm1d(hidden_dims[0]),
+            nn.Dropout(dropout_prob)
+        )
+
+        self.hidden_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(in_dim, out_dim),
+                nn.ReLU(),
+                nn.BatchNorm1d(out_dim),
+                nn.Dropout(dropout_prob)
+            ) for in_dim, out_dim in zip(hidden_dims[:-1], hidden_dims[1:])
+        ])
+
+        self.output_layer = nn.Linear(hidden_dims[-1], num_classes)
+
+    def forward(self, X):
+        X = self.input_layer(X)
+        for layer in self.hidden_layers:
+            X = layer(X)
+        return self.output_layer(X)
+
+    def __str__(self):
+        return "Enhanced_X3D"
