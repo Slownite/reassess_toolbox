@@ -69,9 +69,26 @@ def load(
     )
 
 
-def init(args) -> tuple[nn.Module, DataLoader]:
+def calculate_class_weights(dataset: Dataset) -> torch.Tensor:
     """
-    Initialize the model and data loader.
+    Calculate class weights for weighted cross-entropy.
+
+    Args:
+        dataset (Dataset): Dataset to calculate class weights from.
+
+    Returns:
+        torch.Tensor: Class weights for weighted cross-entropy.
+    """
+    labels = [dataset[idx][1] for idx in range(len(dataset))]
+    class_counts = np.bincount(labels)
+    class_weights = 1.0 / (class_counts + 1e-6)  # Avoid division by zero
+    class_weights /= class_weights.sum()  # Normalize weights
+    return torch.tensor(class_weights, dtype=torch.float)
+
+
+def init(args) -> tuple[nn.Module, DataLoader, torch.Tensor]:
+    """
+    Initialize the model, data loader, and class weights.
     """
     arch = {"RGB_X3D": X3D_head, "OF_X3D": X3D_head}
     model = arch[args.model](num_classes=args.target,
@@ -87,7 +104,10 @@ def init(args) -> tuple[nn.Module, DataLoader]:
         downsample_seed=args.downsample_seed,
     )
 
-    return model, dataloader
+    # Calculate class weights
+    class_weights = calculate_class_weights(dataloader.dataset)
+
+    return model, dataloader, class_weights
 
 
 def train(
@@ -99,11 +119,10 @@ def train(
     Train the model with the provided arguments.
     Logs loss at the end of each epoch.
     """
-    model, dataloader = init(args)
+    model, dataloader, class_weights = init(args)
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = StepLR(optimizer, step_size=5, gamma=0.01)
-    loss_fn = nn.CrossEntropyLoss()
-    # weight=torch.tensor([1.0015, 662.7814])).to(device)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+    loss_fn = nn.CrossEntropyLoss(weight=class_weights.to(device))
     model = model.to(device)
     model.train()
 
@@ -146,38 +165,6 @@ def train(
     return model
 
 
-def evaluate(args, model, device) -> None:
-    """
-    Evaluate the model on the test set and compute metrics.
-    """
-    dataloader = load(
-        MultiNpyEdf,
-        args.testset,
-        args.schema_path,
-        args.model,
-        b_size=args.batch_size,
-        shuffle=args.shuffle,
-    )
-    y_predictions, y_true = [], []
-
-    model.eval()
-    with torch.no_grad():
-        for batch_number, data in enumerate(dataloader):
-            try:
-                X, y = data
-                X, y = X.to(device), y.to(device)
-                y_true.append(y.cpu().numpy())
-                y_pred = model(X).argmax(dim=1).detach().cpu().numpy()
-                y_predictions.append(y_pred)
-            except Exception as e:
-                logging.error(f"Error in batch {batch_number + 1}: {e}")
-
-    y_true = np.concatenate(y_true, axis=0)
-    y_predictions = np.concatenate(y_predictions, axis=0)
-
-    compute_metrics(args, model, y_predictions, y_true)
-
-
 def main() -> None:
     parser = ArgumentParser()
     parser.add_argument("data_path", type=pathlib.Path)
@@ -202,9 +189,6 @@ def main() -> None:
     model = train(args, device=device, n_epochs=args.epochs)
     save_model_weights(model, args.path_to_model_save /
                        f"{args.model}_lr{args.learning_rate}_epochs{args.epochs}.pth")
-
-    if args.testset:
-        evaluate(args, model, device)
 
 
 if __name__ == "__main__":

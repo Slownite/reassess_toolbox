@@ -1,4 +1,3 @@
-
 from argparse import ArgumentParser
 import pathlib
 import numpy as np
@@ -14,15 +13,18 @@ from sklearn.metrics import (
 )
 from sklearn.exceptions import UndefinedMetricWarning
 from datasets import MultiNpyEdf
-from utils import write_dict_to_csv
-from tqdm.auto import tqdm
+from utils import write_dict_to_csv, downsample
 
 
-def load_data(dataset, dataset_path, schema_json):
-    """Load data using the MultiNpyEdf dataset class."""
+def load_data(dataset, dataset_path, schema_json, downsample_classes=False, downsample_seed=0):
+    """Load data using the MultiNpyEdf dataset class, with optional downsampling."""
     npy_files = dataset_path.rglob("0rgb_*x3d*.npy")
     edf_files = dataset_path.rglob("*.edf")
     data = dataset(npy_files, edf_files, schema_json)
+
+    if downsample_classes:
+        print("Downsampling the dataset for balanced classes...")
+        data = downsample(data, seed=downsample_seed)
 
     X, y = [], []
     for idx in range(len(data)):
@@ -84,11 +86,21 @@ def main():
     parser.add_argument("schema_path", type=pathlib.Path)
     parser.add_argument("--testset", type=pathlib.Path, default=None)
     parser.add_argument("--n_estimators", type=int, default=100)
+    parser.add_argument("--downsample", action="store_true",
+                        help="Enable downsampling for class balance.")
+    parser.add_argument("--downsample_seed", type=int,
+                        default=0, help="Random seed for downsampling.")
     args = parser.parse_args()
 
     # Load training data
     print("Loading training data...")
-    X_train, y_train = load_data(MultiNpyEdf, args.data_path, args.schema_path)
+    X_train, y_train = load_data(
+        MultiNpyEdf,
+        args.data_path,
+        args.schema_path,
+        downsample_classes=args.downsample,
+        downsample_seed=args.downsample_seed
+    )
 
     # Train Random Forest model
     print("Training Random Forest...")
@@ -98,7 +110,13 @@ def main():
     # Evaluate on the test set if provided
     if args.testset:
         print("Loading test data...")
-        X_test, y_test = load_data(MultiNpyEdf, args.testset, args.schema_path)
+        X_test, y_test = load_data(
+            MultiNpyEdf,
+            args.testset,
+            args.schema_path,
+            downsample_classes=args.downsample,
+            downsample_seed=args.downsample_seed
+        )
 
         print("Evaluating Random Forest...")
         y_pred = model.predict(X_test)
