@@ -101,7 +101,7 @@ def train(
     """
     model, dataloader = init(args)
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=5, gamma=0.01)
     loss_fn = nn.CrossEntropyLoss()
     # weight=torch.tensor([1.0015, 662.7814])).to(device)
     model = model.to(device)
@@ -130,10 +130,6 @@ def train(
                     loss.item(),
                     args.path_to_model_save /
                     f"loss_epoch{epoch+1}_batch{batch_number+1}.txt",
-                )
-                logging.info(
-                    f"Epoch {epoch + 1}, Batch {batch_number +
-                                                1}/{num_batches}, Loss: {loss.item():.4f}"
                 )
             except Exception as e:
                 logging.error(f"Error in batch {batch_number + 1}: {e}")
