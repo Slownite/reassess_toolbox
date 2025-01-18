@@ -5,7 +5,7 @@ import logging
 from argparse import ArgumentParser
 from torch.utils.data import DataLoader, Dataset, Subset
 from torch import nn
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 from torch.optim.lr_scheduler import StepLR
 import torch
 from datasets import MultiNpyEdf
@@ -100,8 +100,8 @@ def train(
     Logs loss at the end of each epoch.
     """
     model, dataloader = init(args)
-    optimizer = SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
-    scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
+    optimizer = Adam(model.parameters(), lr=args.learning_rate)
+    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
     loss_fn = nn.CrossEntropyLoss()
     # weight=torch.tensor([1.0015, 662.7814])).to(device)
     model = model.to(device)
