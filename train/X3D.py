@@ -3,18 +3,23 @@
 import pathlib
 import logging
 from argparse import ArgumentParser
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Dataset
 from torch import nn
-from torch.optim import SGD, Adam
+from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 import torch
 from datasets import MultiNpyEdf
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
 from modules import X3D_head, Enhanced_X3D_head
-from tqdm.auto import tqdm
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
-from sklearn.metrics import make_scorer, fbeta_score
-from sklearn.exceptions import UndefinedMetricWarning
+from sklearn.metrics import (
+    confusion_matrix,
+    precision_score,
+    recall_score,
+    f1_score,
+    accuracy_score,
+    roc_auc_score,
+    fbeta_score
+)
 import numpy as np
 
 logging.basicConfig(level=logging.INFO)
@@ -33,20 +38,6 @@ def load(
 ) -> DataLoader:
     """
     Load the dataset and optionally downsample it.
-
-    Args:
-        dataset (Dataset): Dataset class to load data.
-        dataset_path (pathlib.Path): Path to the dataset.
-        schema_json (pathlib.Path): Path to the schema JSON.
-        model (str): Model type (e.g., RGB_X3D or OF_X3D).
-        b_size (int): Batch size for DataLoader.
-        shuffle (bool): Whether to shuffle the dataset.
-        n_workers (int): Number of workers for DataLoader.
-        downsample_classes (bool): Whether to downsample the dataset.
-        downsample_seed (int): Seed for reproducibility.
-
-    Returns:
-        DataLoader: DataLoader for the dataset.
     """
     if model == "OF_X3D":
         npy_files = dataset_path.rglob("0flow_*x3d*.npy")
@@ -72,12 +63,6 @@ def load(
 def calculate_class_weights(dataset: Dataset) -> torch.Tensor:
     """
     Calculate class weights for weighted cross-entropy.
-
-    Args:
-        dataset (Dataset): Dataset to calculate class weights from.
-
-    Returns:
-        torch.Tensor: Class weights for weighted cross-entropy.
     """
     labels = [dataset[idx][1] for idx in range(len(dataset))]
     class_counts = np.bincount(labels)
@@ -117,7 +102,6 @@ def train(
 ) -> nn.Module:
     """
     Train the model with the provided arguments.
-    Logs loss at the end of each epoch.
     """
     model, dataloader, class_weights = init(args)
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
@@ -165,6 +149,81 @@ def train(
     return model
 
 
+def evaluate(args, model, device) -> None:
+    """
+    Evaluate the model on the test set and compute metrics.
+    """
+    logging.info("Starting evaluation...")
+    dataloader = load(
+        MultiNpyEdf,
+        args.testset,
+        args.schema_path,
+        args.model,
+        b_size=args.batch_size,
+        shuffle=False,  # No shuffling for evaluation
+    )
+
+    y_predictions, y_true = [], []
+    model.eval()
+
+    with torch.no_grad():
+        for batch_number, data in enumerate(dataloader):
+            try:
+                X, y = data
+                X, y = X.to(device), y.to(device)
+                y_true.append(y.cpu().numpy())
+                y_pred = model(X).argmax(dim=1).detach().cpu().numpy()
+                y_predictions.append(y_pred)
+            except Exception as e:
+                logging.error(f"Error in batch {batch_number + 1}: {e}")
+
+    y_true = np.concatenate(y_true, axis=0)
+    y_predictions = np.concatenate(y_predictions, axis=0)
+
+    metrics = compute_metrics(y_true, y_predictions)
+    write_dict_to_csv(metrics, args.path_to_model_save /
+                      "evaluation_metrics.csv", write_headers=True)
+    logging.info("Evaluation metrics saved to evaluation_metrics.csv")
+
+
+def compute_metrics(y_true, y_pred) -> dict:
+    """
+    Compute evaluation metrics, including weighted metrics.
+    """
+    logging.info("Computing evaluation metrics...")
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average="binary")
+    recall = recall_score(y_true, y_pred, average="binary")
+    f1 = f1_score(y_true, y_pred, average="binary")
+    f2 = fbeta_score(y_true, y_pred, beta=2)
+    specificity = tn / (tn + fp)
+    roc_auc = roc_auc_score(y_true, y_pred)
+
+    # Weighted metrics
+    weighted_precision = precision_score(y_true, y_pred, average="weighted")
+    weighted_recall = recall_score(y_true, y_pred, average="weighted")
+    weighted_f1 = f1_score(y_true, y_pred, average="weighted")
+
+    metrics = {
+        "Accuracy": accuracy,
+        "Precision": precision,
+        "Recall": recall,
+        "F1 Score": f1,
+        "F2 Score": f2,
+        "Specificity": specificity,
+        "ROC AUC": roc_auc,
+        "Weighted Precision": weighted_precision,
+        "Weighted Recall": weighted_recall,
+        "Weighted F1 Score": weighted_f1,
+    }
+
+    for metric, value in metrics.items():
+        logging.info(f"{metric}: {value:.4f}")
+
+    return metrics
+
+
 def main() -> None:
     parser = ArgumentParser()
     parser.add_argument("data_path", type=pathlib.Path)
@@ -189,6 +248,9 @@ def main() -> None:
     model = train(args, device=device, n_epochs=args.epochs)
     save_model_weights(model, args.path_to_model_save /
                        f"{args.model}_lr{args.learning_rate}_epochs{args.epochs}.pth")
+
+    if args.testset:
+        evaluate(args, model, device)
 
 
 if __name__ == "__main__":
