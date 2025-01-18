@@ -91,7 +91,7 @@ def init(args) -> tuple[nn.Module, DataLoader, torch.Tensor]:
 
     # Calculate class weights
     # calculate_class_weights(dataloader.dataset)
-    class_weights = torch.tensor[1.0, 1.0]
+    class_weights = torch.tensor([1.0, 1.0])
 
     return model, dataloader, class_weights
 
