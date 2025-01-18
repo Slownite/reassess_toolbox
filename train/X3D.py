@@ -234,7 +234,7 @@ def main() -> None:
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--target", type=int, default=2)
     parser.add_argument("--model", type=str, default="RGB_X3D")
-    parser.add_argument("--batch_size", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=100)
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--shuffle", type=bool, default=True)
