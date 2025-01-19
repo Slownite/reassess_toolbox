@@ -59,14 +59,14 @@ class OF_I3D_head(nn.Module):
 
 
 class X3D_head(nn.Module):
-    def __init__(self, input_dim=8192, hidden_dims=[4096, 2048, 1024, 512], num_classes=2, dropout_prob=0.5):
+    def __init__(self, input_dim=8192, hidden_dims=[4096, 2048, 1024, 512, 256, 128], num_classes=2, dropout_prob=0.5):
         super(X3D_head, self).__init__()
 
         layers = []
         current_dim = input_dim
 
         for hidden_dim in hidden_dims:
-            layers.append(nn.Linear(current_dim, hidden_dim))
+            layers.append(nn.Linear(current_dim, hidden_dim), bias=True)
             layers.append(nn.ReLU())  # Non-linear activation
             layers.append(nn.BatchNorm1d(hidden_dim))  # Batch Normalization
             # Dropout for regularization
@@ -74,7 +74,7 @@ class X3D_head(nn.Module):
             current_dim = hidden_dim
 
         # Output layer
-        layers.append(nn.Linear(current_dim, num_classes))
+        layers.append(nn.Linear(current_dim, num_classes), bias=True)
 
         self.model = nn.Sequential(*layers)
 
