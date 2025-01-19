@@ -74,7 +74,7 @@ class X3D_head(nn.Module):
             current_dim = hidden_dim
 
         # Output layer
-        layers.append(nn.Linear(current_dim, num_classes), bias=True)
+        layers.append(nn.Linear(current_dim, num_classes, bias=True))
 
         self.model = nn.Sequential(*layers)
 
