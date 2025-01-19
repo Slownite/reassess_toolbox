@@ -228,6 +228,8 @@ def evaluate(args, model, device) -> None:
     metrics = compute_metrics(y_true, y_predictions)
     write_dict_to_csv(metrics, args.path_to_model_save /
                       "evaluation_metrics.csv", write_headers=True)
+
+    logging.info(metrics)
     logging.info("Evaluation metrics saved to evaluation_metrics.csv")
 
 
