@@ -66,7 +66,7 @@ class X3D_head(nn.Module):
         current_dim = input_dim
 
         for hidden_dim in hidden_dims:
-            layers.append(nn.Linear(current_dim, hidden_dim), bias=True)
+            layers.append(nn.Linear(current_dim, hidden_dim, bias=True))
             layers.append(nn.ReLU())  # Non-linear activation
             layers.append(nn.BatchNorm1d(hidden_dim))  # Batch Normalization
             # Dropout for regularization
