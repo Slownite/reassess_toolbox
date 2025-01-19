@@ -105,7 +105,7 @@ def train(
     """
     model, dataloader, pos_weight = init(args)
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+    scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(device))
     model = model.to(device)
     model.train()
@@ -149,6 +149,47 @@ def train(
         scheduler.step()
 
     return model
+
+
+def compute_metrics(y_true, y_pred) -> dict:
+    """
+    Compute evaluation metrics for binary classification.
+    Includes accuracy, precision, recall, F1-score, ROC-AUC, and weighted metrics.
+    """
+    metrics = {}
+
+    # Flatten arrays if needed
+    y_true = y_true.ravel()
+    y_pred = y_pred.ravel()
+
+    # Confusion matrix components
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    metrics['true_negatives'] = tn
+    metrics['false_positives'] = fp
+    metrics['false_negatives'] = fn
+    metrics['true_positives'] = tp
+
+    # Metrics calculations
+    metrics['accuracy'] = accuracy_score(y_true, y_pred)
+    metrics['precision'] = precision_score(y_true, y_pred, zero_division=0)
+    metrics['recall'] = recall_score(y_true, y_pred, zero_division=0)
+    metrics['f1_score'] = f1_score(y_true, y_pred, zero_division=0)
+    metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
+
+    # Weighted metrics
+    metrics['weighted_precision'] = precision_score(
+        y_true, y_pred, average='weighted', zero_division=0)
+    metrics['weighted_recall'] = recall_score(
+        y_true, y_pred, average='weighted', zero_division=0)
+    metrics['weighted_f1_score'] = f1_score(
+        y_true, y_pred, average='weighted', zero_division=0)
+
+    # F-beta score for prioritizing recall or precision
+    metrics['fbeta_0.5'] = fbeta_score(
+        y_true, y_pred, beta=0.5, zero_division=0)
+    metrics['fbeta_2'] = fbeta_score(y_true, y_pred, beta=2, zero_division=0)
+
+    return metrics
 
 
 def evaluate(args, model, device) -> None:
@@ -203,7 +244,8 @@ def main() -> None:
     parser.add_argument("--batch_size", type=int, default=100)
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--shuffle", type=bool, default=True)
+    parser.add_argument("--shuffle", action="store_true",
+                        help="Shuffle the dataset during training.")
     parser.add_argument("--testset", type=pathlib.Path, default=None)
     parser.add_argument("--downsample", action="store_true",
                         help="Enable downsampling for class balance.")
