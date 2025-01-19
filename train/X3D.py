@@ -147,7 +147,7 @@ def train(
         )
 
         # Step the learning rate scheduler
-       scheduler.step()
+        scheduler.step()
         # optimizer.step()
     return model
 
