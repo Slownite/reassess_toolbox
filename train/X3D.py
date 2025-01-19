@@ -44,7 +44,7 @@ def load(
     else:
         npy_files = dataset_path.rglob("0rgb_*x3d*.npy")
     edf_files = dataset_path.rglob("*.edf")
-    data = dataset(npy_files, edf_files, schema_json)
+    data = dataset(npy_files, edf_files, schema_json, window_size=75)
 
     # Downsample the dataset if required
     if downsample_classes:

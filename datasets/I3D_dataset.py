@@ -63,7 +63,7 @@ class I3D_embeddings(Dataset):
 
 
 class NpyEdf(Dataset):
-    def __init__(self, npy_file, edf_file, schema_file, frame_rate=25, size_image_block=64) -> None:
+    def __init__(self, npy_file, edf_file, schema_file, frame_rate=25, size_image_block=64, window_size=5) -> None:
         self.npy = np.load(npy_file)
         raw = mne.io.read_raw_edf(
             edf_file, preload=False, verbose=False, encoding='latin1')
@@ -78,6 +78,18 @@ class NpyEdf(Dataset):
             k: schema.get(v, 0) for k, v in zip(onset_times, labels)
         }
         self.size = size_image_block
+        self.window_size = window_size
+
+        # Expand annotations to include the window around each onset
+        self.expanded_annotations = self._expand_annotations()
+
+    def _expand_annotations(self):
+        """Expand the annotations to include the window around each onset."""
+        expanded = set()
+        for onset in self.annotations.keys():
+            for offset in range(-self.window_size, self.window_size + 1):
+                expanded.add(onset + offset)
+        return expanded
 
     def __len__(self):
         return len(self.npy)
@@ -87,14 +99,16 @@ class NpyEdf(Dataset):
             raise IndexError()
         start = index * self.size
         end = start + self.size
-        annotation = 1 if sum([key for key in range(
-            start, end) if key in self.annotations]) > 0 else 0
+
+        # Check if any frame in the block falls within the expanded annotation range
+        annotation = 1 if any(key for key in range(
+            start, end) if key in self.expanded_annotations) else 0
         return self.npy[index], annotation
 
 
 class MultiNpyEdf(Dataset):
-    def __init__(self, npy_files, edf_files, schema_file, frame_rate=25, size_image_block=64) -> None:
-        self.data = [NpyEdf(npy_file, edf_file, schema_file, frame_rate, size_image_block)
+    def __init__(self, npy_files, edf_files, schema_file, frame_rate=25, size_image_block=64, window_size=5) -> None:
+        self.data = [NpyEdf(npy_file, edf_file, schema_file, frame_rate, size_image_block, window_size)
                      for npy_file, edf_file in zip(npy_files, edf_files)]
         # Precompute lengths for easier indexing
         self.lengths = [len(dataset) for dataset in self.data]
