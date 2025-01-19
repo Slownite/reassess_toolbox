@@ -78,7 +78,6 @@ def extract_and_save(model, loader, device, filename):
         for data in tqdm(loader):
             data = data.to(device, non_blocking=True)
             embeddings = model(data)
-            print("embedding shape", embeddings.shape)
             write_embedding_to_file_in_chunks(
                 embeddings.cpu().numpy(), filename)
 
@@ -89,9 +88,9 @@ def main():
     parser.add_argument("source_dir", type=pathlib.Path,
                         help="Path to source directory containing videos")
     parser.add_argument("-w", "--window_size", type=int,
-                        default=64, help="Number of frames per video block")
+                        default=16, help="Number of frames per video block")
     parser.add_argument("-b", "--batch_size", type=int,
-                        default=16, help="Batch size for DataLoader")
+                        default=64, help="Batch size for DataLoader")
     parser.add_argument("-nw", "--num_workers", type=int,
                         default=0, help="Number of workers for DataLoader")
     args = parser.parse_args()
