@@ -109,7 +109,7 @@ def train(
     # nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(device))
     loss_fn = nn.BCEWithLogitsLoss()
     model = model.to(device)
-    model.train()
+    model.eval()
 
     for epoch in range(n_epochs):
         logging.info(f"Starting epoch {epoch + 1}/{n_epochs}.")
