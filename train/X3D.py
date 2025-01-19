@@ -105,8 +105,9 @@ def train(
     """
     model, dataloader, pos_weight = init(args)
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
-    loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(device))
+    # scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
+    # pos_weight=pos_weight.to(device)
+    loss_fn = nn.BCEWithLogitsLoss()
     model = model.to(device)
     model.train()
 
@@ -146,8 +147,8 @@ def train(
         )
 
         # Step the learning rate scheduler
-        scheduler.step()
-        # optimizer.step()
+        # scheduler.step()
+        optimizer.step()
     return model
 
 
