@@ -107,7 +107,7 @@ def train(
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
     scheduler = StepLR(optimizer, step_size=100, gamma=0.1)
     # pos_weight=pos_weight.to(device)
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(device))
     model = model.to(device)
     model.train()
 
