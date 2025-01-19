@@ -11,9 +11,7 @@ import glob
 
 def modif_blocks(model):
     last_block = model.blocks[5]
-    last_block.dropout = torch.nn.Identity()
     last_block.proj = torch.nn.Identity()
-    last_block.activation = torch.nn.Identity()
     last_block.output_pool = torch.nn.Identity()
     model.blocks[5] = last_block
     return model
@@ -80,6 +78,7 @@ def extract_and_save(model, loader, device, filename):
         for data in tqdm(loader):
             data = data.to(device, non_blocking=True)
             embeddings = model(data)
+            print("embedding shape", embeddings.shape)
             write_embedding_to_file_in_chunks(
                 embeddings.cpu().numpy(), filename)
 
