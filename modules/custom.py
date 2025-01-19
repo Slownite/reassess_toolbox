@@ -59,7 +59,7 @@ class OF_I3D_head(nn.Module):
 
 
 class X3D_head(nn.Module):
-    def __init__(self, input_dim=8192, hidden_dims=[4096, 2048, 1024, 512, 256, 128, 64, 32], num_classes=2, dropout_prob=0.3):
+    def __init__(self, input_dim=8192, hidden_dims=[4096, 2048, 1024, 512], num_classes=2, dropout_prob=0.3):
         super(X3D_head, self).__init__()
 
         layers = []
