@@ -107,7 +107,7 @@ def train(
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
     scheduler = StepLR(optimizer, step_size=150, gamma=0.1)
     # nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(device))
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(device))
     model = model.to(device)
     model.train()
 
@@ -152,7 +152,7 @@ def train(
     return model
 
 
-def compute_metrics(y_true, y_pred, sample_weights=None) -> dict:
+def compute_metrics(y_true, y_pred) -> dict:
     """
     Compute evaluation metrics for binary classification.
     Includes accuracy, precision, recall, F1-score, ROC-AUC, and weighted metrics.
@@ -175,22 +175,20 @@ def compute_metrics(y_true, y_pred, sample_weights=None) -> dict:
     metrics['precision'] = precision_score(y_true, y_pred, zero_division=0)
     metrics['recall'] = recall_score(y_true, y_pred, zero_division=0)
     metrics['f1_score'] = f1_score(y_true, y_pred, zero_division=0)
-    metrics['roc_auc'] = roc_auc_score(
-        y_true, y_pred, sample_weight=sample_weights)
+    metrics['roc_auc'] = roc_auc_score(y_true, y_pred)
 
     # Weighted metrics
     metrics['weighted_precision'] = precision_score(
-        y_true, y_pred, average='weighted', sample_weight=sample_weights, zero_division=0)
+        y_true, y_pred, average='weighted', zero_division=0)
     metrics['weighted_recall'] = recall_score(
-        y_true, y_pred, average='weighted', sample_weight=sample_weights, zero_division=0)
+        y_true, y_pred, average='weighted', zero_division=0)
     metrics['weighted_f1_score'] = f1_score(
-        y_true, y_pred, average='weighted', sample_weight=sample_weights, zero_division=0)
+        y_true, y_pred, average='weighted', zero_division=0)
 
     # F-beta score for prioritizing recall or precision
     metrics['fbeta_0.5'] = fbeta_score(
-        y_true, y_pred, beta=0.5, sample_weight=sample_weights, zero_division=0)
-    metrics['fbeta_2'] = fbeta_score(
-        y_true, y_pred, beta=2, sample_weight=sample_weights, zero_division=0)
+        y_true, y_pred, beta=0.5, zero_division=0)
+    metrics['fbeta_2'] = fbeta_score(y_true, y_pred, beta=2, zero_division=0)
 
     return metrics
 
@@ -210,7 +208,6 @@ def evaluate(args, model, device) -> None:
     )
 
     y_predictions, y_true = [], []
-    weights = []  # Collect weights for evaluation
     model.eval()
 
     with torch.no_grad():
@@ -219,12 +216,6 @@ def evaluate(args, model, device) -> None:
                 X, y = data
                 X, y = X.to(device), y.to(device)
                 y_true.append(y.cpu().numpy())
-                # Collect weights for current batch
-                class_counts = np.bincount(y.cpu().numpy().astype(int))
-                pos_weight = class_counts[0] / (class_counts[1] + 1e-6)
-                weights.extend(
-                    [pos_weight if label == 1 else 1 for label in y.cpu().numpy()])
-
                 # Apply sigmoid for probabilities
                 y_pred = torch.sigmoid(model(X))
                 # Threshold at 0.5
@@ -235,9 +226,7 @@ def evaluate(args, model, device) -> None:
     y_true = np.concatenate(y_true, axis=0)
     y_predictions = np.concatenate(y_predictions, axis=0)
 
-    # Compute metrics with weights
-    metrics = compute_metrics(y_true, y_predictions,
-                              sample_weights=np.array(weights))
+    metrics = compute_metrics(y_true, y_predictions)
     write_dict_to_csv(metrics, args.path_to_model_save /
                       "evaluation_metrics.csv", write_headers=True)
 
