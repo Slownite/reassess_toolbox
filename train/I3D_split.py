@@ -2,18 +2,20 @@
 
 from argparse import ArgumentParser
 import pathlib
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.utils.data import DataLoader, Dataset, random_split, Subset
 from torch import nn
-from torch.optim import SGD
+from torch.optim import Optimizer, SGD
 from torch.optim.lr_scheduler import StepLR
 import torch
 from datasets import MultiNpyEdf
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
 from modules import RGB_I3D_head, OF_I3D_head
+from tqdm.auto import tqdm
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
-from sklearn.metrics import fbeta_score
+from sklearn.metrics import make_scorer, fbeta_score
 from sklearn.exceptions import UndefinedMetricWarning
 import numpy as np
+import logging
 
 
 def load(
@@ -87,25 +89,32 @@ def train(
         weight=torch.tensor([1.0015, 662.7814])).to(device)
     model = model.to(device)
     model.train()
-    for i in range(n_epochs):
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
+    for epoch in range(n_epochs):
+        epoch_loss = 0.0
+        logging.info(f"Starting epoch {epoch + 1}/{n_epochs}")
+
         for batch_number, data in enumerate(train_loader):
-            print(f"start batch {batch_number}")
             X, y = data
             optimizer.zero_grad()
-            X_rgb = X
-            X_f = X
-            X_rgb = X_rgb.to(device)
-            X_f = X_f.to(device)
+
+            X_rgb = X.to(device)
+            X_f = X.to(device)
             y = y.to(device)
+
             y_pred = model(X_rgb, X_f)
             loss = loss_fn(y_pred, y)
-            print("loss:", loss.item())
+            epoch_loss += loss.item()
+
             loss.backward()
             optimizer.step()
-            save_loss(loss.item(), args.path_to_model_save /
-                      f"loss_{model}_{args.learning_rate}_{args.epochs}.txt".replace("\n", ""))
-            print(f"batch {batch_number} done")
+
+        epoch_loss /= len(train_loader)
+        logging.info(f"Epoch {epoch + 1} completed. Loss: {epoch_loss:.4f}")
         scheduler.step()
+
     return model
 
 
@@ -147,14 +156,14 @@ def compute_metrics(args, model, y_pred, y_true):
         }
 
         # Print results before saving
-        print("Test Results:")
+        logging.info("Test Results:")
         for key, value in results.items():
-            print(f"{key}: {value}")
+            logging.info(f"{key}: {value}")
 
         write_dict_to_csv(results, 'results.csv', write_headers=True)
-        print('result saved in the file results.csv')
+        logging.info('Results saved to results.csv')
     except UndefinedMetricWarning as umw:
-        print(f"Warning: {umw}")
+        logging.warning(f"Warning: {umw}")
 
 
 def evaluate(args, model, device) -> None:
@@ -165,7 +174,7 @@ def evaluate(args, model, device) -> None:
     model.eval()
     with torch.no_grad():
         for batch_number, data in enumerate(test_loader):
-            print(f"start batch {batch_number}")
+            logging.info(f"Processing batch {batch_number + 1}")
             try:
                 X, y = data
                 X_rgb = X.to(device)
@@ -177,9 +186,8 @@ def evaluate(args, model, device) -> None:
                 y_pred = y_pred.argmax(dim=1).detach().cpu().numpy()
                 y_predictions.append(y_pred)
 
-                print(f"end batch {batch_number}")
             except Exception as e:
-                print(f"Error in batch {batch_number}: {e}")
+                logging.error(f"Error in batch {batch_number + 1}: {e}")
                 continue
 
     y_true = np.concatenate(y_true, axis=0)
