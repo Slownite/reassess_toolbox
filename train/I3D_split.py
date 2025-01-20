@@ -32,7 +32,7 @@ def load(
     else:
         npy_files = dataset_path.rglob("rgb_*.npy")
     edf_files = dataset_path.rglob("*.edf")
-    data = dataset(npy_files, edf_files, schema_json)
+    data = dataset(npy_files, edf_files, schema_json, window_size=75)
     return data
 
 
