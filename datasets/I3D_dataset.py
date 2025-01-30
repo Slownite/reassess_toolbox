@@ -182,11 +182,11 @@ class MultiNpyEdfSequence(Dataset):
         for i in range(self.sequence_length):
             idx = local_index + i
             if idx < self.lengths[dataset_idx]:  # If within dataset bounds
-                sequence.append(self.data[dataset_idx][idx])
+                sequence.append(self.data[dataset_idx][idx].asarray())
             else:  # Apply padding
-                padded_sample = (torch.full_like(sequence[0][0], self.pad_value),  # Feature padding
+                padded_sample = (torch.full_like(sequence[0][0].asarray(), self.pad_value),  # Feature padding
                                  # Label padding
-                                 torch.full_like(sequence[0][1], self.pad_value))
+                                 torch.full_like(sequence[0][1].asarray(), self.pad_value))
                 sequence.append(padded_sample)
 
         return sequence
