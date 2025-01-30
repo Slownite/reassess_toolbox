@@ -85,42 +85,110 @@ class X3D_head(nn.Module):
         return "X3D_rgb"
 
 
-class Enhanced_X3D_head(nn.Module):
-    def __init__(self, input_dim=401408, hidden_dims=[200704,
-                                                      100352,
-                                                      50176,
-                                                      25088,
-                                                      12544,
-                                                      6272,
-                                                      2048,
-                                                      1024,
-                                                      512],
-                 num_classes=2, dropout_prob=0.5):
-        super(Enhanced_X3D_head, self).__init__()
+class LSTMHead(nn.Module):
+    def __init__(self, input_dim=8192, hidden_dim=512, num_layers=2, num_classes=2, dropout_prob=0.3):
+        """
+        LSTM-based model with a final fully connected layer for classification.
 
-        self.input_layer = nn.Sequential(
-            nn.Linear(input_dim, hidden_dims[0]),
-            nn.ReLU(),
-            nn.BatchNorm1d(hidden_dims[0]),
-            nn.Dropout(dropout_prob)
+        Args:
+            input_dim (int): Dimensionality of the input features.
+            hidden_dim (int): Number of hidden units in the LSTM.
+            num_layers (int): Number of LSTM layers.
+            num_classes (int): Number of output classes.
+            dropout_prob (float): Dropout probability for regularization.
+        """
+        super(LSTMHead, self).__init__()
+
+        # LSTM layer
+        self.lstm = nn.LSTM(
+            input_size=input_dim,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            # Dropout only for multi-layer LSTM
+            dropout=dropout_prob if num_layers > 1 else 0.0,
         )
 
-        self.hidden_layers = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(in_dim, out_dim),
-                nn.ReLU(),
-                nn.BatchNorm1d(out_dim),
-                nn.Dropout(dropout_prob)
-            ) for in_dim, out_dim in zip(hidden_dims[:-1], hidden_dims[1:])
-        ])
-
-        self.output_layer = nn.Linear(hidden_dims[-1], num_classes)
+        # Fully connected layers for classification
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_dim, 256),
+            nn.ReLU(),
+            nn.BatchNorm1d(256),
+            nn.Dropout(dropout_prob),
+            nn.Linear(256, num_classes),
+        )
 
     def forward(self, X):
-        X = self.input_layer(X)
-        for layer in self.hidden_layers:
-            X = layer(X)
-        return self.output_layer(X)
+        """
+        Forward pass for the model.
+
+        Args:
+            X (Tensor): Input tensor of shape (batch_size, seq_len, input_dim).
+
+        Returns:
+            Tensor: Output logits of shape (batch_size, num_classes).
+        """
+        # LSTM outputs
+        # lstm_out shape: (batch_size, seq_len, hidden_dim)
+        lstm_out, _ = self.lstm(X)
+
+        # Use only the last hidden state for classification
+        # shape: (batch_size, hidden_dim)
+        last_hidden_state = lstm_out[:, -1, :]
+
+        # Fully connected layers
+        out = self.fc(last_hidden_state)
+        return out
 
     def __str__(self):
-        return "Enhanced_X3D"
+        return "LSTMHead"
+
+
+class ProjectedTransformer(nn.Module):
+    def __init__(
+        self,
+        input_dim=8192,   # Raw input embedding size
+        d_model=512,      # Internal Transformer dimension
+        nhead=8,
+        num_layers=6,
+        num_classes=2
+    ):
+        super().__init__()
+
+        # 1. Linear projection (8192 -> 512, for example)
+        self.projection = nn.Linear(input_dim, d_model)
+
+        # 2. Define a Transformer Encoder
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=nhead)
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer, num_layers=num_layers)
+
+        # 3. Final classification layer (e.g., 512 -> 10 classes)
+        self.fc_out = nn.Linear(d_model, num_classes)
+
+    def forward(self, x):
+        """
+        x shape: (batch_size, seq_len, input_dim)
+        """
+        # Project the input down to d_model
+        x = self.projection(x)  # (batch_size, seq_len, d_model)
+
+        # Rearrange to (seq_len, batch_size, d_model) for PyTorch Transformer
+        x = x.permute(1, 0, 2)  # (seq_len, batch_size, d_model)
+
+        # Pass through Transformer Encoder
+        x = self.transformer_encoder(x)  # (seq_len, batch_size, d_model)
+
+        # Transpose back to (batch_size, seq_len, d_model)
+        x = x.permute(1, 0, 2)
+
+        # Take the hidden state of the first token (like a CLS token)
+        # for classification. Alternatively, you could average-pool or
+        # do something else.
+        cls_token_state = x[:, 0, :]  # (batch_size, d_model)
+
+        # Final classification layer
+        logits = self.fc_out(cls_token_state)  # (batch_size, num_classes)
+
+        return logits
