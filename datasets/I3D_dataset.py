@@ -233,7 +233,7 @@ def debug_multi_edf_npy_sequences():
 
     for i in range(len(dataset)):
         input_sequence = dataset[i]
-        print(f"Sequence {i}: Labels {[input for input in input_sequence]} at position start {
+        print(f"Sequence {i}: Labels {[input[0] for input in input_sequence]} at position start {
               i * 64} end {(i * 64) + (64 * args.sequence_length)}")
 
 
