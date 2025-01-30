@@ -146,7 +146,59 @@ class MultiNpyEdf(Dataset):
             f"Global index {global_index} not found in any dataset")
 
 
-if __name__ == "__main__":
+class MultiNpyEdfSequence(Dataset):
+    def __init__(self, npy_files, edf_files, schema_file, frame_rate=25, size_image_block=64, window_size=5, sequence_length=10, pad_value=0):
+        self.sequence_length = sequence_length
+        self.pad_value = pad_value
+
+        self.data = [NpyEdf(npy_file, edf_file, schema_file, frame_rate, size_image_block, window_size)
+                     for npy_file, edf_file in zip(npy_files, edf_files)]
+
+        # Precompute lengths for easier indexing
+        self.lengths = [len(dataset) for dataset in self.data]
+        self.cumulative_lengths = [0] + \
+            list(self._cumulative_sum(self.lengths))
+
+    def _cumulative_sum(self, lengths):
+        """Helper method to compute cumulative sums."""
+        total = 0
+        for length in lengths:
+            total += length
+            yield total
+
+    def __len__(self):
+        return sum(self.lengths)
+
+    def __getitem__(self, index):
+        if index < 0 or index >= len(self):
+            raise IndexError(
+                f"Index {index} out of range for dataset of length {len(self)}")
+
+        dataset_idx = self._find_dataset_index(index)
+        local_index = index - self.cumulative_lengths[dataset_idx]
+
+        # Fetch the sequence
+        sequence = []
+        for i in range(self.sequence_length):
+            idx = local_index + i
+            if idx < self.lengths[dataset_idx]:  # If within dataset bounds
+                sequence.append(self.data[dataset_idx][idx])
+            else:  # Apply padding
+                sequence.append(self.pad_value)
+
+        return sequence
+
+    def _find_dataset_index(self, global_index):
+        """Find the dataset index for a given global index using cumulative lengths."""
+        for i, cum_length in enumerate(self.cumulative_lengths[1:]):
+            if global_index < cum_length:
+                return i
+        raise IndexError(
+            f"Global index {global_index} not found in any dataset")
+
+
+def debug_multi_edf_npy():
+
     parser = argparse.ArgumentParser(prog="test NpyEdf dataset")
     parser.add_argument("--npy", type=pathlib.Path, nargs='+',
                         required=True, help="List of .npy files")
@@ -161,3 +213,29 @@ if __name__ == "__main__":
         input = dataset[i]
         print(
             f"label: {input[1]} at position start {i * 64} end {(i * 64) + 64}")
+
+
+def debug_multi_edf_npy_sequences():
+    parser = argparse.ArgumentParser(prog="test NpyEdf dataset sequences")
+    parser.add_argument("--npy", type=pathlib.Path, nargs='+',
+                        required=True, help="List of .npy files")
+    parser.add_argument("--edf", type=pathlib.Path, nargs='+',
+                        required=True, help="List of .edf files")
+    parser.add_argument("--schema", type=pathlib.Path, required=True)
+    parser.add_argument("-f", "--frame_duration", default=1/25, type=float)
+    parser.add_argument("-w", "--window_duration", default=3, type=float)
+    parser.add_argument("-s", "--sequence_length", default=10,
+                        type=int, help="Length of sequences to retrieve")
+    args = parser.parse_args()
+
+    dataset = MultiNpyEdfSequence(
+        args.npy, args.edf, args.schema, sequence_length=args.sequence_length)
+
+    for i in range(len(dataset)):
+        input_sequence = dataset[i]
+        print(f"Sequence {i}: Labels {[input[1] for input in input_sequence]} at position start {
+              i * 64} end {(i * 64) + (64 * args.sequence_length)}")
+
+
+if __name__ == "__main__":
+    debug_multi_edf_npy_sequences()
