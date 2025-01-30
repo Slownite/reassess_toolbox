@@ -211,7 +211,7 @@ def debug_multi_edf_npy():
     dataset = MultiNpyEdf(args.npy, args.edf, args.schema)
     for i in range(len(dataset)):
         input = dataset[i]
-        assert isinstance(input, tuple) is True
+        assert input.sahep == 2
         print(
             f"label: {input[1]} at position start {i * 64} end {(i * 64) + 64}")
 
