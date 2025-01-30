@@ -184,7 +184,8 @@ class MultiNpyEdfSequence(Dataset):
             if idx < self.lengths[dataset_idx]:  # If within dataset bounds
                 sequence.append(self.data[dataset_idx][idx])
             else:  # Apply padding
-                sequence.append(self.pad_value)
+                sequence[0].append(self.pad_value)
+                sequence[1].append(self.pad_value)
 
         return sequence
 
