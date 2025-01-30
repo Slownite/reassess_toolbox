@@ -212,7 +212,7 @@ def debug_multi_edf_npy():
     for i in range(len(dataset)):
         input = dataset[i]
         print(
-            f"label: {input} at position start {i * 64} end {(i * 64) + 64}")
+            f"label: {input[1]} at position start {i * 64} end {(i * 64) + 64}")
 
 
 def debug_multi_edf_npy_sequences():
@@ -233,6 +233,8 @@ def debug_multi_edf_npy_sequences():
 
     for i in range(len(dataset)):
         input_sequence = dataset[i]
+
+        assert input.shape == 2
         print(f"Sequence {i}: Labels {[input[1] for input in input_sequence]} at position start {
               i * 64} end {(i * 64) + (64 * args.sequence_length)}")
 
