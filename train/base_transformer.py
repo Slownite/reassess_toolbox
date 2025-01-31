@@ -130,7 +130,7 @@ def train(
     return model
 
 
-@hydra.main(config_path="conf/X3D/", config_name="transformer.yaml")
+@hydra.main(config_path="conf/X3D/", config_name="transformer.yaml", version_base=None)
 def main(cfg: DictConfig) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = train(cfg, device=device, n_epochs=cfg.epochs)
