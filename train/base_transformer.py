@@ -117,11 +117,12 @@ def train(
         for batch_number, sequences in enumerate(train_loader):
             try:
                 X = sequences[0]
-                print(X.shape)
                 y = sequences[1]
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
                 y_pred = model(X)
+                print(y.shape)
+                print(y_pred.shape)
                 loss = loss_fn(y_pred.squeeze(), y)
                 loss.backward()
                 optimizer.step()
