@@ -26,6 +26,15 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 
 
+def collate_fn(batch):
+    sequences, labels = zip(*batch)  # Separate sequences and labels
+    # Pad sequences so they all have the same length
+    padded_sequences = pad_sequence(
+        sequences, batch_first=True, padding_value=0)
+    labels = torch.stack(labels)  # Stack labels into a single tensor
+    return padded_sequences, labels
+
+
 def load_dataset(
     dataset_path: pathlib.Path,
     schema_json: pathlib.Path,
@@ -76,9 +85,9 @@ def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
     train_data, test_data = split_dataset(
         dataset, cfg.test_split, seed=cfg.seed)
     train_loader = DataLoader(train_data, batch_size=cfg.batch_size,
-                              shuffle=cfg.shuffle, num_workers=2, pin_memory=True)
+                              shuffle=cfg.shuffle, num_workers=2, pin_memory=True, collate_fn=collate_fn)
     test_loader = DataLoader(test_data, batch_size=cfg.batch_size,
-                             shuffle=False, num_workers=2, pin_memory=True)
+                             shuffle=False, num_workers=2, pin_memory=True, collate_fn=collate_fn)
 
     return model, train_loader, test_loader
 
@@ -110,8 +119,6 @@ def train(
                 y = torch.stack([seq[1] for seq in sequences])
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
-                print(y)
-                print(type(y))
                 y_pred = model(X)
                 loss = loss_fn(y_pred.squeeze(), y)
                 loss.backward()
