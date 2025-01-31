@@ -195,26 +195,17 @@ class MultiNpyEdfSequence(Dataset):
                     sample[1], dtype=torch.float32)
             else:  # Apply padding
                 features = torch.full_like(torch.tensor(
-                    sequence[0][0]), self.pad_value) if sequence else torch.tensor(0.0)
-                label = torch.full_like(torch.tensor(
-                    sequence[0][1]), self.pad_value) if sequence else torch.tensor(0.0)
+                    sequence[0]), self.pad_value) if sequence else torch.tensor(0.0)
+                label = torch.tensor(0.0)
 
-            sequence.append((features, label))
-            labels.append(label)
+            sequence.append(features)
+            labels.append(label.item())  # Store label as a scalar
 
-        # Determine final label: 1 if there's any '1' in labels, else 0
+        # Compute final sequence label: 1 if there's any '1' in the sequence labels, else 0
         final_label = torch.tensor(1.0 if any(
-            l.item() == 1 for l in labels) else 0.0, dtype=torch.float32)
+            l == 1.0 for l in labels) else 0.0, dtype=torch.float32)
 
-        return sequence, final_label
-
-    def _find_dataset_index(self, global_index):
-        """Find the dataset index for a given global index using cumulative lengths."""
-        for i, cum_length in enumerate(self.cumulative_lengths[1:]):
-            if global_index < cum_length:
-                return i
-        raise IndexError(
-            f"Global index {global_index} not found in any dataset")
+        return torch.stack(sequence), final_label
 
 
 def debug_multi_edf_npy():
