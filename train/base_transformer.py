@@ -126,7 +126,7 @@ def train(
                 optimizer.step()
 
                 epoch_loss += loss.item()
-                save_loss(loss.item(), cfg.path_to_model_save /
+                save_loss(loss.item(), pathlib.Path(cfg.path_to_model_save) /
                           f"loss_epoch{epoch+1}_batch{batch_number+1}.txt")
             except Exception as e:
                 logging.error(f"Error in batch {batch_number + 1}: {e}")
