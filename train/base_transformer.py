@@ -145,8 +145,8 @@ def train(
 
 @hydra.main(config_path="../conf", config_name="transformer.yaml", version_base=None)
 def main(cfg: DictConfig) -> None:
-    hydra_config = HydraConfig.instance()
-    config_name = hydra_config.runtime.config_name
+    hydra_cfg = HydraConfig.get()
+    config_name = hydra_cfg.job.config_name
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = train(cfg, device=device, n_epochs=cfg.epochs)
     save_model_weights(model, pathlib.Path(cfg.path_to_model_save) /
