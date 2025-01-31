@@ -116,8 +116,9 @@ def train(
 
         for batch_number, sequences in enumerate(train_loader):
             try:
-                X = torch.stack([seq[0] for seq in sequences])
-                y = torch.stack([seq[1] for seq in sequences])
+                X = sequences[0]
+                print(X.shape)
+                y = sequences[1]
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
                 y_pred = model(X)
