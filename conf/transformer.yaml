@@ -16,7 +16,7 @@ learning_rate: 1e-3
 test_split: 0.2
 shuffle: true
 seed: 0
-
+sequence_length: 10
 # Transformer parameters
 transformer:
   input_dim: 8192

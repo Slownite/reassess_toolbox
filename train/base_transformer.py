@@ -29,7 +29,6 @@ logging.basicConfig(level=logging.INFO)
 def load_dataset(
     dataset_path: pathlib.Path,
     schema_json: pathlib.Path,
-    model: str,
     sequence_length: int = 10,
     b_size=5,
     shuffle=True,
@@ -69,9 +68,8 @@ def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
         num_classes=cfg.target
     )
     dataset = load_dataset(
-        cfg.data_path,
-        cfg.schema_path,
-        cfg.model,
+        pathlib.Path(cfg.data_path),
+        pathlib.Path(cfg.schema_path),
         sequence_length=cfg.sequence_length
     )
 
@@ -130,7 +128,7 @@ def train(
     return model
 
 
-@hydra.main(config_path="conf/X3D/", config_name="transformer.yaml", version_base=None)
+@hydra.main(config_path="../conf", config_name="transformer.yaml", version_base=None)
 def main(cfg: DictConfig) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = train(cfg, device=device, n_epochs=cfg.epochs)
