@@ -194,18 +194,26 @@ class MultiNpyEdfSequence(Dataset):
                 features, label = torch.tensor(sample[0], dtype=torch.float32), torch.tensor(
                     sample[1], dtype=torch.float32)
             else:  # Apply padding
-                features = torch.full_like(torch.tensor(
-                    sequence[0]), self.pad_value) if sequence else torch.tensor(0.0)
+                if sequence:  # Use padding with existing feature dimensions
+                    features = torch.full_like(sequence[0], self.pad_value)
+                else:  # Handle the first case (empty sequence)
+                    # Replace 8192 with expected feature size
+                    features = torch.zeros((self.sequence_length, 8192))
                 label = torch.tensor(0.0)
 
             sequence.append(features)
             labels.append(label.item())  # Store label as a scalar
 
+        # Ensure sequence dimensions are consistent
+        sequence = torch.stack(sequence)  # Stack into a single tensor
+        assert sequence.shape[1:] == torch.Size(
+            [8192]), f"Feature dimension mismatch: {sequence.shape}"
+
         # Compute final sequence label: 1 if there's any '1' in the sequence labels, else 0
         final_label = torch.tensor(1.0 if any(
             l == 1.0 for l in labels) else 0.0, dtype=torch.float32)
 
-        return torch.stack(sequence), final_label
+        return sequence, final_label
 
 
 def debug_multi_edf_npy():
