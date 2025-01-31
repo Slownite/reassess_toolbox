@@ -9,6 +9,7 @@ from torch import nn
 from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 import torch
+from torch.nn.utils.rnn import pad_sequence
 from datasets import MultiNpyEdfSequence
 from utils import save_model_weights, save_loss, downsample, write_dict_to_csv
 from modules import ProjectedTransformer
@@ -24,6 +25,15 @@ from sklearn.metrics import (
 import numpy as np
 
 logging.basicConfig(level=logging.INFO)
+
+
+def collate_fn(batch):
+    sequences, labels = zip(*batch)  # Separate sequences and labels
+    # Pad sequences so they all have the same length
+    padded_sequences = pad_sequence(
+        sequences, batch_first=True, padding_value=0)
+    labels = torch.stack(labels)  # Stack labels into a single tensor
+    return padded_sequences, labels
 
 
 def load_dataset(
@@ -76,9 +86,9 @@ def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
     train_data, test_data = split_dataset(
         dataset, cfg.test_split, seed=cfg.seed)
     train_loader = DataLoader(train_data, batch_size=cfg.batch_size,
-                              shuffle=cfg.shuffle, num_workers=2, pin_memory=True)
+                              shuffle=cfg.shuffle, num_workers=2, pin_memory=True, collate_fn=collate_fn)
     test_loader = DataLoader(test_data, batch_size=cfg.batch_size,
-                             shuffle=False, num_workers=2, pin_memory=True)
+                             shuffle=False, num_workers=2, pin_memory=True, collate_fn=collate_fn)
 
     return model, train_loader, test_loader
 
