@@ -75,7 +75,7 @@ def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
         d_model=cfg.transformer.d_model,
         nhead=cfg.transformer.nhead,
         num_layers=cfg.transformer.num_layers,
-        num_classes=cfg.target
+        num_classes=cfg.transformer.num_classes
     )
     dataset = load_dataset(
         pathlib.Path(cfg.data_path),
@@ -121,8 +121,6 @@ def train(
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
                 y_pred = model(X)
-                print(y.shape)
-                print(y_pred[0])
                 loss = loss_fn(y_pred.squeeze(), y)
                 loss.backward()
                 optimizer.step()
