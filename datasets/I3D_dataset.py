@@ -169,6 +169,13 @@ class MultiNpyEdfSequence(Dataset):
     def __len__(self):
         return sum(self.lengths)
 
+    def _find_dataset_index(self, index):
+        """Find which dataset the index belongs to."""
+        for i, cumulative_length in enumerate(self.cumulative_lengths[1:]):
+            if index < cumulative_length:
+                return i
+        return len(self.cumulative_lengths) - 1
+
     def __getitem__(self, index):
         if index < 0 or index >= len(self):
             raise IndexError(
@@ -179,19 +186,27 @@ class MultiNpyEdfSequence(Dataset):
 
         # Fetch the sequence
         sequence = []
+        labels = []
         for i in range(self.sequence_length):
             idx = local_index + i
             if idx < self.lengths[dataset_idx]:  # If within dataset bounds
                 sample = self.data[dataset_idx][idx]
-                sequence.append((torch.tensor(sample[0], dtype=torch.float32), torch.tensor(
-                    sample[1], dtype=torch.float32)))
+                features, label = torch.tensor(sample[0], dtype=torch.float32), torch.tensor(
+                    sample[1], dtype=torch.float32)
             else:  # Apply padding
-                padded_sample = (torch.full_like(torch.tensor(sequence[0][0]), self.pad_value),  # Feature padding
-                                 # Label padding
-                                 torch.full_like(torch.tensor(sequence[0][1]), self.pad_value))
-                sequence.append(padded_sample)
+                features = torch.full_like(torch.tensor(
+                    sequence[0][0]), self.pad_value) if sequence else torch.tensor(0.0)
+                label = torch.full_like(torch.tensor(
+                    sequence[0][1]), self.pad_value) if sequence else torch.tensor(0.0)
 
-        return sequence
+            sequence.append((features, label))
+            labels.append(label)
+
+        # Determine final label: 1 if there's any '1' in labels, else 0
+        final_label = torch.tensor(1.0 if any(
+            l.item() == 1 for l in labels) else 0.0, dtype=torch.float32)
+
+        return sequence, final_label
 
     def _find_dataset_index(self, global_index):
         """Find the dataset index for a given global index using cumulative lengths."""
