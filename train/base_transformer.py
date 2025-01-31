@@ -4,6 +4,7 @@ import pathlib
 import logging
 import hydra
 from omegaconf import DictConfig
+from hydra.core.hydra_config import HydraConfig
 from torch.utils.data import DataLoader, Dataset, random_split
 from torch import nn
 from torch.optim import Adam
@@ -40,9 +41,8 @@ def load_dataset(
     dataset_path: pathlib.Path,
     schema_json: pathlib.Path,
     sequence_length: int = 10,
-    b_size=5,
-    shuffle=True,
-    n_workers=2,
+    downsample_classes=False,
+    downsample_seed=0,
 ) -> DataLoader:
     """
     Load the dataset using MultiNpyEdfSequence.
@@ -52,6 +52,9 @@ def load_dataset(
 
     dataset = MultiNpyEdfSequence(
         npy_files, edf_files, schema_json, sequence_length=sequence_length)
+    if downsample_classes:
+        logging.info("Downsampling the dataset for balanced classes.")
+        dataset = downsample(dataset, seed=downsample_seed, verbose=True)
     return dataset
 
 
@@ -80,7 +83,9 @@ def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
     dataset = load_dataset(
         pathlib.Path(cfg.data_path),
         pathlib.Path(cfg.schema_path),
-        sequence_length=cfg.sequence_length
+        sequence_length=cfg.sequence_length,
+        downsample_classes=cfg.downsample,
+        downsample_seed=cfg.seed,
     )
 
     train_data, test_data = split_dataset(
@@ -140,10 +145,12 @@ def train(
 
 @hydra.main(config_path="../conf", config_name="transformer.yaml", version_base=None)
 def main(cfg: DictConfig) -> None:
+    hydra_config = HydraConfig.instance()
+    config_name = hydra_config.runtime.config_name
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = train(cfg, device=device, n_epochs=cfg.epochs)
-    save_model_weights(model, cfg.path_to_model_save /
-                       f"{cfg.model}_lr{cfg.learning_rate}_epochs{cfg.epochs}.pth")
+    save_model_weights(model, pathlib.Path(cfg.path_to_model_save) /
+                       f"{config_name}.pth")
 
 
 if __name__ == "__main__":
