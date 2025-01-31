@@ -110,6 +110,8 @@ def train(
                 y = torch.stack([seq[1] for seq in sequences])
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
+                print(y)
+                print(type(y))
                 y_pred = model(X)
                 loss = loss_fn(y_pred.squeeze(), y)
                 loss.backward()
