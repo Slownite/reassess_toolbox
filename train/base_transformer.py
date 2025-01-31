@@ -122,7 +122,7 @@ def train(
                 X, y = X.to(device), y.to(device).float()
                 y_pred = model(X)
                 print(y.shape)
-                print(y_pred.shape)
+                print(y_pred[0])
                 loss = loss_fn(y_pred.squeeze(), y)
                 loss.backward()
                 optimizer.step()
