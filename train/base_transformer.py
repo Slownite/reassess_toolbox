@@ -125,9 +125,9 @@ def train(
                 y = sequences[1]
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
+                print(X)
                 y_pred = model(X)
                 loss = loss_fn(y_pred.squeeze(), y)
-                print(f"y_pred: {y_pred}, y: {y}")
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
