@@ -208,7 +208,6 @@ class MultiNpyEdfSequence(Dataset):
         # Compute final sequence label: 1 if there's any '1' in the sequence labels, else 0
         final_label = torch.tensor(1.0 if sum(
             labels) > 0.0 else 0.0, dtype=torch.float32)
-        print(final_label)
         return sequence, final_label
 
 
