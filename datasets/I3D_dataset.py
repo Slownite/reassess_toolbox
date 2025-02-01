@@ -200,7 +200,7 @@ class MultiNpyEdfSequence(Dataset):
 
             sequence.append(features)
             labels.append(label.item())  # Store label as a scalar
-            print(Counter(labels))
+            print(labels)
         # Ensure sequence dimensions are consistent
         sequence = torch.stack(sequence)  # Stack into a single tensor
         assert sequence.shape[1:] == torch.Size(
