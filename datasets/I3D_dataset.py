@@ -194,11 +194,7 @@ class MultiNpyEdfSequence(Dataset):
                 features, label = torch.tensor(sample[0], dtype=torch.float32), torch.tensor(
                     sample[1], dtype=torch.float32)
             else:  # Apply padding
-                if sequence:  # Use padding with existing feature dimensions
-                    features = torch.full_like(sequence[0], self.pad_value)
-                else:  # Handle the first case (empty sequence)
-                    # Replace 8192 with expected feature size
-                    features = torch.zeros((self.sequence_length, 8192))
+                features = torch.full_like(sequence[0], self.pad_value)
                 label = torch.tensor(0.0)
 
             sequence.append(features)
