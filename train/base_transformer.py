@@ -85,25 +85,25 @@ def compute_metrics(y_true, y_pred) -> dict:
     y_pred = y_pred.ravel()
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     metrics.update({
-        'true_negatives': tn,
-        'false_positives': fp,
-        'false_negatives': fn,
-        'true_positives': tp,
-        'accuracy': accuracy_score(y_true, y_pred),
-        'precision': precision_score(y_true, y_pred, zero_division=0),
-        'recall': recall_score(y_true, y_pred, zero_division=0),
-        'f1_score': f1_score(y_true, y_pred, zero_division=0),
-        'roc_auc': roc_auc_score(y_true, y_pred),
-        'weighted_precision': precision_score(y_true, y_pred, average='weighted', zero_division=0),
-        'weighted_recall': recall_score(y_true, y_pred, average='weighted', zero_division=0),
-        'weighted_f1_score': f1_score(y_true, y_pred, average='weighted', zero_division=0),
-        'fbeta_0.5': fbeta_score(y_true, y_pred, beta=0.5, zero_division=0),
-        'fbeta_2': fbeta_score(y_true, y_pred, beta=2, zero_division=0)
+        'True Negatives': tn,
+        'False Positives': fp,
+        'False Negatives': fn,
+        'True Positives': tp,
+        'Accuracy': accuracy_score(y_true, y_pred),
+        'Precision': precision_score(y_true, y_pred, zero_division=0),
+        'Recall': recall_score(y_true, y_pred, zero_division=0),
+        'F1 Score': f1_score(y_true, y_pred, zero_division=0),
+        'ROC AUC': roc_auc_score(y_true, y_pred),
+        'Weighted Precision': precision_score(y_true, y_pred, average='weighted', zero_division=0),
+        'Weighted Recall': recall_score(y_true, y_pred, average='weighted', zero_division=0),
+        'Weighted F1 Score': f1_score(y_true, y_pred, average='weighted', zero_division=0),
+        'F-beta (0.5)': fbeta_score(y_true, y_pred, beta=0.5, zero_division=0),
+        'F-beta (2)': fbeta_score(y_true, y_pred, beta=2, zero_division=0)
     })
     return metrics
 
 
-def evaluate(cfg: DictConfig, model, test_loader, device):
+def evaluate(cfg: DictConfig, config_name, model, test_loader, device):
     logging.info("Starting evaluation...")
     y_predictions, y_true = [], []
     model.eval()
@@ -117,12 +117,14 @@ def evaluate(cfg: DictConfig, model, test_loader, device):
     y_predictions = np.concatenate(y_predictions, axis=0)
     metrics = compute_metrics(y_true, y_predictions)
     write_dict_to_csv(metrics, pathlib.Path(
-        cfg.path_to_model_save) / "evaluation_metrics.csv", write_headers=True)
-    logging.info(metrics)
+        cfg.path_to_model_save) / f"{config_name}_evaluation_metrics.csv", write_headers=True)
+    logging.info("Evaluation Results:")
+    for key, value in metrics.items():
+        logging.info(f"{key}: {value:.4f}")
     logging.info("Evaluation metrics saved to evaluation_metrics.csv")
 
 
-def train(cfg: DictConfig, device: torch.device, n_epochs: int = 1) -> nn.Module:
+def train(cfg: DictConfig, config_name: str, device: torch.device, n_epochs: int = 1) -> nn.Module:
     model, train_loader, test_loader = init(cfg)
     optimizer = Adam(model.parameters(), lr=cfg.learning_rate)
     scheduler = StepLR(
@@ -131,6 +133,8 @@ def train(cfg: DictConfig, device: torch.device, n_epochs: int = 1) -> nn.Module
     model.to(device)
     model.train()
     for epoch in range(n_epochs):
+        epoch_loss = 0
+        num_batches = len(train_loader)
         logging.info(f"Starting epoch {epoch + 1}/{n_epochs}.")
         for X, y in train_loader:
             X, y = X.to(device), y.to(device).float()
@@ -139,8 +143,12 @@ def train(cfg: DictConfig, device: torch.device, n_epochs: int = 1) -> nn.Module
             loss = loss_fn(y_pred.squeeze(), y)
             loss.backward()
             optimizer.step()
+            epoch_loss += loss.item()
+        avg_loss = epoch_loss / num_batches
+        logging.info(
+            f"Epoch {epoch + 1} completed. Average Loss: {avg_loss:.4f}")
         scheduler.step()
-    evaluate(cfg, model, test_loader, device)
+    evaluate(cfg, config_name, model, test_loader, device)
     return model
 
 
@@ -149,7 +157,7 @@ def main(cfg: DictConfig) -> None:
     hydra_cfg = HydraConfig.get()
     config_name = hydra_cfg.job.config_name
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = train(cfg, device=device, n_epochs=cfg.epochs)
+    model = train(cfg, config_name, device=device, n_epochs=cfg.epochs)
     save_model_weights(model, pathlib.Path(cfg.path_to_model_save) /
                        f"{config_name}.pth")
 
