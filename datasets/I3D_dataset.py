@@ -193,6 +193,7 @@ class MultiNpyEdfSequence(Dataset):
                 sample = self.data[dataset_idx][idx]
                 features, label = torch.tensor(sample[0], dtype=torch.float32), torch.tensor(
                     sample[1], dtype=torch.float32)
+                print(label)
             else:  # Apply padding
                 features = torch.full_like(sequence[0], self.pad_value)
                 label = torch.tensor(0.0)
