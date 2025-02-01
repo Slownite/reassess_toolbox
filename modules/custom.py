@@ -156,7 +156,10 @@ class ProjectedTransformer(nn.Module):
         super().__init__()
 
         # 1. Linear projection (8192 -> 512, for example)
-        self.projection = nn.Linear(input_dim, d_model)
+        self.projection = nn.Sequential(
+            nn.Linear(input_dim, d_model),
+            nn.ReLU()  # or nn.GELU()
+        )
 
         # 2. Define a Transformer Encoder
         encoder_layer = nn.TransformerEncoderLayer(
