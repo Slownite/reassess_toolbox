@@ -125,10 +125,6 @@ def train(
                 y = sequences[1]
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device).float()
-                if torch.isnan(X).any() or torch.isinf(X).any():
-                    logging.error(
-                        f"NaN or Inf detected in input X at epoch {epoch}, batch {batch_number}")
-                    continue
                 y_pred = model(X)
                 loss = loss_fn(y_pred.squeeze(), y)
                 loss.backward()
