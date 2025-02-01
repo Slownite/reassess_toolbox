@@ -19,7 +19,7 @@ def process_annotation_text_file(path: pathlib.Path, schema: dict[str, int], met
     return reduce_annotations
 
 
-def downsample(dataset: Dataset, seed: int = 0, target_size: Union[int, None] = None, verbose: bool = False) -> Subset:
+def downsample(dataset: Dataset, seed: int = 0, target_size: int = None, verbose: bool = False) -> Subset:
     """
     Downsamples a dataset to balance classes to the size of the smallest class or a specified size.
 
@@ -37,28 +37,24 @@ def downsample(dataset: Dataset, seed: int = 0, target_size: Union[int, None] = 
 
     # Collect indices by class
     for i, data in enumerate(dataset):
-        _, label = data
-        samples[label].append(i)
+        _, label = data  # Assuming dataset returns (data, label)
+        samples[int(label)].append(i)  # Ensure label is an int
 
     # Find the size of the smallest class
-    min_class = min(samples, key=lambda k: len(samples[k]))
-    min_size_class = target_size or len(samples[min_class])
+    min_size_class = min(len(v) for v in samples.values())
+    final_size = target_size if target_size and target_size <= min_size_class else min_size_class
 
-    # Validate target size
-    if target_size and target_size > len(samples[min_class]):
-        raise ValueError(
-            "Target size cannot be larger than the smallest class size.")
-
-    # Log information
     if verbose:
-        logging.info(f"Smallest class: {min_class} with {
-                     len(samples[min_class])} samples.")
-        logging.info(f"Final subset size per class: {min_size_class}.")
+        for class_label, indices in samples.items():
+            print(f"Class {class_label}: {len(indices)} samples")
+        print(f"Downsampling to {final_size} samples per class.")
 
-    # Shuffle and sample indices
-    samples = {k: random.sample(v, len(v)) for k, v in samples.items()}
-    class_indices = list(chain.from_iterable(
-        v[:min_size_class] for v in samples.values()))
+    # Shuffle and sample indices for each class
+    for class_label in samples:
+        random.shuffle(samples[class_label])
+        samples[class_label] = samples[class_label][:final_size]
 
-    # Create and return the subset
-    return Subset(dataset, class_indices)
+    # Flatten list of indices
+    downsampled_indices = list(chain.from_iterable(samples.values()))
+
+    return Subset(dataset, downsampled_indices)
