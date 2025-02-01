@@ -144,54 +144,57 @@ class LSTMHead(nn.Module):
         return "LSTMHead"
 
 
-class ProjectedTransformer(nn.Module):
-    def __init__(
-        self,
-        input_dim=8192,   # Raw input embedding size
-        d_model=512,      # Internal Transformer dimension
-        nhead=8,
-        num_layers=6,
-        num_classes=2
-    ):
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_len=5000):
         super().__init__()
 
-        # 1. Linear projection (8192 -> 512, for example)
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float(
+        ) * (-torch.log(torch.tensor(10000.0)) / d_model))
+
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)  # Shape: (1, max_len, d_model)
+
+        self.register_buffer("pe", pe)
+
+    def forward(self, x):
+        return x + self.pe[:, :x.size(1)]
+
+
+class ProjectedTransformer(nn.Module):
+    def __init__(self, input_dim=8192, d_model=512, nhead=8, num_layers=6, num_classes=2, seq_len=10):
+        super().__init__()
+
         self.projection = nn.Sequential(
             nn.Linear(input_dim, d_model),
-            nn.ReLU()  # or nn.GELU()
+            nn.ReLU()
         )
 
-        # 2. Define a Transformer Encoder
+        self.input_norm = nn.LayerNorm(d_model)
+
+        # Positional Encoding
+        self.positional_encoding = PositionalEncoding(d_model, max_len=seq_len)
+
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=d_model, nhead=nhead)
         self.transformer_encoder = nn.TransformerEncoder(
             encoder_layer, num_layers=num_layers)
 
-        # 3. Final classification layer (e.g., 512 -> 10 classes)
         self.fc_out = nn.Linear(d_model, num_classes)
 
     def forward(self, x):
-        """
-        x shape: (batch_size, seq_len, input_dim)
-        """
-        # Project the input down to d_model
-        x = self.projection(x)  # (batch_size, seq_len, d_model)
+        x = self.projection(x)
+        x = self.input_norm(x)
+        x = self.positional_encoding(x)  # Add positional encoding
 
-        # Rearrange to (seq_len, batch_size, d_model) for PyTorch Transformer
-        x = x.permute(1, 0, 2)  # (seq_len, batch_size, d_model)
+        x = x.permute(1, 0, 2)  # (seq_len, batch, d_model)
+        x = self.transformer_encoder(x)
+        x = x.permute(1, 0, 2)  # (batch, seq_len, d_model)
 
-        # Pass through Transformer Encoder
-        x = self.transformer_encoder(x)  # (seq_len, batch_size, d_model)
-
-        # Transpose back to (batch_size, seq_len, d_model)
-        x = x.permute(1, 0, 2)
-
-        # Take the hidden state of the first token (like a CLS token)
-        # for classification. Alternatively, you could average-pool or
-        # do something else.
-        cls_token_state = x[:, 0, :]  # (batch_size, d_model)
-
-        # Final classification layer
-        logits = self.fc_out(cls_token_state)  # (batch_size, num_classes)
+        cls_token_state = x[:, 0, :]
+        logits = self.fc_out(cls_token_state)
+        logits = torch.clamp(logits, min=-10, max=10)
 
         return logits
