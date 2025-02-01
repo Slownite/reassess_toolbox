@@ -13,6 +13,7 @@ from more_itertools import flatten
 import numpy as np
 import mne
 import argparse
+from collections import Counter
 
 
 def standardize(rgb, flow):
@@ -193,14 +194,13 @@ class MultiNpyEdfSequence(Dataset):
                 sample = self.data[dataset_idx][idx]
                 features, label = torch.tensor(sample[0], dtype=torch.float32), torch.tensor(
                     sample[1], dtype=torch.float32)
-                print(label)
             else:  # Apply padding
                 features = torch.full_like(sequence[0], self.pad_value)
                 label = torch.tensor(0.0)
 
             sequence.append(features)
             labels.append(label.item())  # Store label as a scalar
-
+            print(Counter(labels))
         # Ensure sequence dimensions are consistent
         sequence = torch.stack(sequence)  # Stack into a single tensor
         assert sequence.shape[1:] == torch.Size(
