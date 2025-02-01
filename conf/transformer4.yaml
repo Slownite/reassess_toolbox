@@ -9,7 +9,7 @@ path_to_model_save: "../Transformer"
 # Training parameters
 batch_size: 1000
 epochs: 100
-learning_rate: 1e-1
+learning_rate: 1e-3
 test_split: 0.2
 shuffle: true
 seed: 0
