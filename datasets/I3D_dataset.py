@@ -210,8 +210,8 @@ class MultiNpyEdfSequence(Dataset):
             [8192]), f"Feature dimension mismatch: {sequence.shape}"
 
         # Compute final sequence label: 1 if there's any '1' in the sequence labels, else 0
-        final_label = torch.tensor(1.0 if any(
-            l == 1.0 for l in labels) else 0.0, dtype=torch.float32)
+        final_label = torch.tensor(1.0 if sum(
+            labels) > 0.0 else 0.0, dtype=torch.float32)
 
         return sequence, final_label
 
@@ -252,8 +252,8 @@ def debug_multi_edf_npy_sequences():
 
     for i in range(len(dataset)):
         input_sequence = dataset[i]
-        print(f"Sequence {i}: Labels {[input[0] for input in input_sequence]} at position start {
-              i * 64} end {(i * 64) + (64 * args.sequence_length)}")
+        print(
+            f"Sequence {i}: Labels {[input[1] for input in input_sequence]} at position start {i * 64} end {(i * 64) + (64 * args.sequence_length)}")
 
 
 if __name__ == "__main__":
