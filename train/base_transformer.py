@@ -127,9 +127,9 @@ def train(
                 X, y = X.to(device), y.to(device).float()
                 y_pred = model(X)
                 loss = loss_fn(y_pred.squeeze(), y)
+                print(f"y_pred: {y_pred}, y: {y}")
                 loss.backward()
                 optimizer.step()
-                print(loss.item())
                 epoch_loss += loss.item()
                 save_loss(loss.item(), pathlib.Path(cfg.path_to_model_save) /
                           f"loss_epoch{epoch+1}_batch{batch_number+1}.txt")
