@@ -1,0 +1,30 @@
+defaults:
+  - _self_
+
+# Paths
+data_path: "../cropped_dataset/CX1"
+schema_path: "./annotations.json"
+path_to_model_save: "../Transformer"
+
+# Training parameters
+batch_size: 10000
+patience: 30
+epochs: 500
+learning_rate: 1e-3
+test_split: 0.2
+val_split: 0.2
+shuffle: true
+seed: 0
+sequence_length: 10
+downsample: true
+# Transformer parameters
+transformer:
+  input_dim: 8192
+  d_model: 1024
+  nhead: 16
+  num_layers: 12
+  num_classes: 1
+# StepLR scheduler parameters
+stepLR:
+  step_size: 20
+  gamma: 0.1
