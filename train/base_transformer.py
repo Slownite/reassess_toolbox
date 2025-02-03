@@ -29,10 +29,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 def collate_fn(batch):
-    sequences, labels = zip(*batch)  # Separate sequences and labels
+    sequences, labels = zip(*batch)
     padded_sequences = pad_sequence(
         sequences, batch_first=True, padding_value=0)
-    labels = torch.stack(labels)  # Stack labels into a single tensor
+    labels = torch.stack(labels)
     return padded_sequences, labels
 
 
@@ -47,15 +47,16 @@ def load_dataset(dataset_path: pathlib.Path, schema_json: pathlib.Path, sequence
     return dataset
 
 
-def split_dataset(dataset: Dataset, test_split: float, seed: int = 0):
+def split_dataset(dataset: Dataset, test_split: float, val_split: float, seed: int = 0):
     test_size = int(len(dataset) * test_split)
-    train_size = len(dataset) - test_size
-    train_data, test_data = random_split(
-        dataset, [train_size, test_size], generator=torch.manual_seed(seed))
-    return train_data, test_data
+    val_size = int(len(dataset) * val_split)
+    train_size = len(dataset) - test_size - val_size
+    train_data, val_data, test_data = random_split(
+        dataset, [train_size, val_size, test_size], generator=torch.manual_seed(seed))
+    return train_data, val_data, test_data
 
 
-def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
+def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader, DataLoader]:
     model = ProjectedTransformer(
         input_dim=cfg.transformer.input_dim,
         d_model=cfg.transformer.d_model,
@@ -70,37 +71,15 @@ def init(cfg: DictConfig) -> tuple[nn.Module, DataLoader, DataLoader]:
         downsample_classes=cfg.downsample,
         downsample_seed=cfg.seed,
     )
-    train_data, test_data = split_dataset(
-        dataset, cfg.test_split, seed=cfg.seed)
+    train_data, val_data, test_data = split_dataset(
+        dataset, cfg.test_split, cfg.val_split, seed=cfg.seed)
     train_loader = DataLoader(train_data, batch_size=cfg.batch_size,
                               shuffle=cfg.shuffle, num_workers=2, pin_memory=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_data, batch_size=cfg.batch_size,
+                            shuffle=False, num_workers=2, pin_memory=True, collate_fn=collate_fn)
     test_loader = DataLoader(test_data, batch_size=cfg.batch_size,
                              shuffle=False, num_workers=2, pin_memory=True, collate_fn=collate_fn)
-    return model, train_loader, test_loader
-
-
-def compute_metrics(y_true, y_pred) -> dict:
-    metrics = {}
-    y_true = y_true.ravel()
-    y_pred = y_pred.ravel()
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    metrics.update({
-        'True Negatives': tn,
-        'False Positives': fp,
-        'False Negatives': fn,
-        'True Positives': tp,
-        'Accuracy': accuracy_score(y_true, y_pred),
-        'Precision': precision_score(y_true, y_pred, zero_division=0),
-        'Recall': recall_score(y_true, y_pred, zero_division=0),
-        'F1 Score': f1_score(y_true, y_pred, zero_division=0),
-        'ROC AUC': roc_auc_score(y_true, y_pred),
-        'Weighted Precision': precision_score(y_true, y_pred, average='weighted', zero_division=0),
-        'Weighted Recall': recall_score(y_true, y_pred, average='weighted', zero_division=0),
-        'Weighted F1 Score': f1_score(y_true, y_pred, average='weighted', zero_division=0),
-        'F-beta (0.5)': fbeta_score(y_true, y_pred, beta=0.5, zero_division=0),
-        'F-beta (2)': fbeta_score(y_true, y_pred, beta=2, zero_division=0)
-    })
-    return metrics
+    return model, train_loader, val_loader, test_loader
 
 
 def evaluate(cfg: DictConfig, config_name, model, test_loader, device):
@@ -115,26 +94,33 @@ def evaluate(cfg: DictConfig, config_name, model, test_loader, device):
             y_predictions.append((y_pred > 0.5).cpu().numpy())
     y_true = np.concatenate(y_true, axis=0)
     y_predictions = np.concatenate(y_predictions, axis=0)
-    metrics = compute_metrics(y_true, y_predictions)
-    write_dict_to_csv(metrics, pathlib.Path(
-        cfg.path_to_model_save) / f"{config_name}_evaluation_metrics.csv", write_headers=True)
-    logging.info("Evaluation Results:")
-    for key, value in metrics.items():
-        logging.info(f"{key}: {value:.4f}")
-    logging.info("Evaluation metrics saved to evaluation_metrics.csv")
+    metrics = {
+        "Accuracy": accuracy_score(y_true, y_predictions),
+        "Precision": precision_score(y_true, y_predictions, zero_division=0),
+        "Recall": recall_score(y_true, y_predictions, zero_division=0),
+        "F1 Score": f1_score(y_true, y_predictions, zero_division=0),
+        "ROC AUC": roc_auc_score(y_true, y_predictions)
+    }
+    write_dict_to_csv(metrics, pathlib.Path(cfg.path_to_model_save) /
+                      f"{config_name}_evaluation_metrics.csv", write_headers=True)
+    logging.info("Evaluation metrics saved.")
 
 
-def train(cfg: DictConfig, config_name: str, device: torch.device, n_epochs: int = 1) -> nn.Module:
-    model, train_loader, test_loader = init(cfg)
+def train(cfg: DictConfig, config_name: str, device: torch.device, n_epochs: int = 1, patience: int = 5) -> nn.Module:
+    model, train_loader, val_loader, test_loader = init(cfg)
     optimizer = Adam(model.parameters(), lr=cfg.learning_rate)
     scheduler = StepLR(
         optimizer, step_size=cfg.stepLR.step_size, gamma=cfg.stepLR.gamma)
     loss_fn = nn.BCEWithLogitsLoss()
     model.to(device)
-    model.train()
+
+    best_val_loss = float('inf')
+    epochs_no_improve = 0
     for epoch in range(n_epochs):
-        epoch_loss = 0
+        model.train()
+        train_loss = 0
         num_batches = len(train_loader)
+
         logging.info(f"Starting epoch {epoch + 1}/{n_epochs}.")
         for X, y in train_loader:
             X, y = X.to(device), y.to(device).float()
@@ -143,11 +129,39 @@ def train(cfg: DictConfig, config_name: str, device: torch.device, n_epochs: int
             loss = loss_fn(y_pred.squeeze(), y)
             loss.backward()
             optimizer.step()
-            epoch_loss += loss.item()
-        avg_loss = epoch_loss / num_batches
+            train_loss += loss.item()
+
+        avg_train_loss = train_loss / num_batches
+
+        # Validation step
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for X, y in val_loader:
+                X, y = X.to(device), y.to(device).float()
+                y_pred = model(X)
+                loss = loss_fn(y_pred.squeeze(), y)
+                val_loss += loss.item()
+        avg_val_loss = val_loss / len(val_loader)
+
         logging.info(
-            f"Epoch {epoch + 1} completed. Average Loss: {avg_loss:.4f}")
+            f"Epoch {epoch + 1} - Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            save_model_weights(model, pathlib.Path(
+                cfg.path_to_model_save) / f"{config_name}_best.pth")
+            logging.info("Best model saved.")
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+
+        if epochs_no_improve >= patience:
+            logging.info("Early stopping triggered.")
+            break
+
         scheduler.step()
+
     evaluate(cfg, config_name, model, test_loader, device)
     return model
 
@@ -157,7 +171,8 @@ def main(cfg: DictConfig) -> None:
     hydra_cfg = HydraConfig.get()
     config_name = hydra_cfg.job.config_name
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = train(cfg, config_name, device=device, n_epochs=cfg.epochs)
+    model = train(cfg, config_name, device=device,
+                  n_epochs=cfg.epochs, patience=cfg.patience)
     save_model_weights(model, pathlib.Path(cfg.path_to_model_save) /
                        f"{config_name}.pth")
 
