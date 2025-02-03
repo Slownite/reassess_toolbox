@@ -173,8 +173,6 @@ class ProjectedTransformer(nn.Module):
         )
 
         self.input_norm = nn.LayerNorm(d_model)
-
-        # Positional Encoding
         self.positional_encoding = PositionalEncoding(d_model, max_len=seq_len)
 
         encoder_layer = nn.TransformerEncoderLayer(
@@ -185,6 +183,8 @@ class ProjectedTransformer(nn.Module):
         self.fc_out = nn.Linear(d_model, num_classes)
 
     def forward(self, x):
+        assert x.ndim == 3, f"(batch_size, seq_len, input_dim), got {x.shape}"
+
         x = self.projection(x)
         x = self.input_norm(x)
         x = self.positional_encoding(x)  # Add positional encoding
@@ -193,8 +193,8 @@ class ProjectedTransformer(nn.Module):
         x = self.transformer_encoder(x)
         x = x.permute(1, 0, 2)  # (batch, seq_len, d_model)
 
-        cls_token_state = x[:, 0, :]
-        logits = self.fc_out(cls_token_state)
-        logits = torch.clamp(logits, min=-10, max=10)
+        # Instead of x[:, 0, :] (which assumes a CLS token), use mean pooling
+        cls_token_state = x.mean(dim=1)
 
-        return logits
+        logits = self.fc_out(cls_token_state)
+        return logits  # No sigmoid if using CrossEntropyLoss
