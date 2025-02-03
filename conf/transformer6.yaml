@@ -12,6 +12,7 @@ patience: 5
 epochs: 500
 learning_rate: 1e-3
 test_split: 0.2
+val_split: 0.2
 shuffle: true
 seed: 0
 sequence_length: 10
