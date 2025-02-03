@@ -9,7 +9,7 @@ path_to_model_save: "../Transformer"
 # Training parameters
 patience: 30
 batch_size: 100
-epochs: 500
+epochs: 50
 learning_rate: 1e-3
 test_split: 0.2
 val_split: 0.2
@@ -26,6 +26,6 @@ transformer:
   num_classes: 1
 # StepLR scheduler parameters
 stepLR:
-  step_size: 20
+  step_size: 25
   gamma: 0.1
 
