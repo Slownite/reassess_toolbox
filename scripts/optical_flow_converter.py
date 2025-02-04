@@ -94,7 +94,8 @@ def calc_optical_flow_raft(prev_frame, curr_frame):
 
     # Check if output is a dictionary and contains 'flow', otherwise assume it's a tuple
     flow_up = (
-        output["flow"] if isinstance(output, dict) and "flow" in output else output[1]
+        output["flow"] if isinstance(
+            output, dict) and "flow" in output else output[1]
     )
 
     # Convert flow to numpy array for further processing
@@ -123,7 +124,6 @@ def save_flow_images(flow, frame_idx, output_dir):
     hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
     rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
     cv2.imwrite(os.path.join(output_dir, f"frame_{frame_idx:04d}.jpeg"), rgb)
-    print(f"Saved frame {frame_idx}")
 
 
 def calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method):
@@ -145,6 +145,7 @@ def calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method):
     else:
         raise ValueError(f"Unsupported optical flow method: {compute_method}")
     return flow
+
 
 def frames_to_video(frames_dir, output_video_path, frame_rate):
     parent = output_video_path.parent
@@ -168,7 +169,8 @@ def video_to_optical_flow(
     video_file, dest_path, compute_method="farneback", output_format="mp4"
 ):
     use_temp_dir = output_format == "mp4"
-    output_dir = pathlib.Path(tempfile.mkdtemp()) if use_temp_dir else dest_path
+    output_dir = pathlib.Path(
+        tempfile.mkdtemp()) if use_temp_dir else dest_path
 
     # If the input_data is a path to a video file
     video_cap = cv2.VideoCapture(str(video_file))
@@ -185,7 +187,8 @@ def video_to_optical_flow(
             break
 
         print(f"Processing frame {frame_idx}")
-        flow = calculate_optical_flow(prev_frame, curr_frame, frame_idx, compute_method)
+        flow = calculate_optical_flow(
+            prev_frame, curr_frame, frame_idx, compute_method)
         save_flow_images(flow, frame_idx, output_dir)
         prev_frame = curr_frame
         frame_idx += 1
@@ -193,7 +196,8 @@ def video_to_optical_flow(
     print("Finished processing all frames.")
     if use_temp_dir:
         # Convert saved images to a video
-        frames_to_video(output_dir, dest_path.parent / f"{video_file.stem[4:]}.mp4", 25)
+        frames_to_video(output_dir, dest_path.parent /
+                        f"{video_file.stem[4:]}.mp4", 25)
         shutil.rmtree(output_dir)
 
 
@@ -215,7 +219,8 @@ def process_all_videos(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert Video to Optical Flow")
+    parser = argparse.ArgumentParser(
+        description="Convert Video to Optical Flow")
     parser.add_argument(
         "directory", type=pathlib.Path, help="Directory containing video files"
     )
@@ -242,5 +247,4 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
-
+    main()
